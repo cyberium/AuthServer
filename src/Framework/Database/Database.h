@@ -79,6 +79,10 @@ class SqlConnection
         // get DB object
         Database& DB() { return m_db; }
 
+        // get some info
+        virtual char const* GetServerInfo() const { return ""; }
+        virtual char const* GetClientInfo() const { return mysql_get_client_info(); }
+
     protected:
         SqlConnection(Database& db) : m_db(db) {}
 
@@ -208,7 +212,7 @@ class Database
         // set database-wide result queue. also we should use object-bases and not thread-based result queues
         void ProcessResultQueue();
 
-        bool CheckRequiredField(char const* table_name, char const* required_name);
+        bool CheckRequiredField(std::string const& table_name, std::string const& required_name);
         uint32 GetPingIntervall() const { return m_pingIntervallms; }
 
         // function to ping database connections
@@ -218,6 +222,10 @@ class Database
         // you should call it explicitly after your server successfully started up
         // NO ASYNC TRANSACTIONS DURING SERVER STARTUP - ONLY DURING RUNTIME!!!
         void AllowAsyncTransactions() { m_bAllowAsyncTransactions = true; }
+
+        // Get some info
+        std::string const& GetClientInfo() const { return m_clientInfo; }
+        std::string const& GetServerInfo() const { return m_serverInfo; }
 
     protected:
         Database() :
@@ -284,5 +292,8 @@ class Database
         bool m_logSQL;
         std::string m_logsDir;
         uint32 m_pingIntervallms;
+        std::string m_dbName;
+        std::string m_serverInfo;
+        std::string m_clientInfo;
 };
 #endif

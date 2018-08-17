@@ -19,12 +19,14 @@
 #include "DatabaseEnv.h"
 #include "Config/Config.h"
 #include "Database/SqlOperations.h"
+#include "Utilities/Util.h"
 
 #include <ctime>
 #include <iostream>
 #include <fstream>
 #include <memory>
 #include <cstdarg>
+#include "../Main/GlobalDefinitions.h"
 
 #define MIN_CONNECTION_POOL_SIZE 1
 #define MAX_CONNECTION_POOL_SIZE 16
@@ -142,6 +144,14 @@ bool Database::Initialize(const char* infoString, int nConns /*= 1*/)
     m_pResultQueue = new SqlResultQueue;
 
     InitDelayThread();
+
+    m_clientInfo = m_pQueryConnections.front()->GetClientInfo();
+    m_serverInfo = m_pQueryConnections.front()->GetServerInfo();
+
+    Tokens tokens = StrSplit(infoString, ";");
+    // retrieve db name from infoString (it should be correct at this stage so no need to test if its empty)
+    m_dbName = tokens.back();
+
     return true;
 }
 
@@ -445,39 +455,28 @@ bool Database::RollbackTransaction()
     return true;
 }
 
-bool Database::CheckRequiredField(char const* table_name, char const* required_name)
+bool Database::CheckRequiredField(std::string const& table_name, std::string const& required_name)
 {
     // check required field
-    QueryResult* result = PQuery("SELECT %s FROM %s LIMIT 1", required_name, table_name);
+    QueryResult* result = PQuery("SELECT %s FROM %s LIMIT 1", required_name.c_str(), table_name.c_str());
     if (result)
     {
         delete result;
         return true;
     }
 
-    // check fail, prepare readabale error message
+    uint32 rSuffixLen = strlen(REQUIRED_SQL_SUFFIX);
 
-    // search current required_* field in DB
-    const char* db_name;
-    if (!strcmp(table_name, "db_version"))
-        db_name = "WORLD";
-    else if (!strcmp(table_name, "character_db_version"))
-        db_name = "CHARACTER";
-    else if (!strcmp(table_name, "realmd_db_version"))
-        db_name = "REALMD";
-    else
-        db_name = "UNKNOWN";
+    std::string req_sql_update_name = required_name.substr(rSuffixLen);
 
-    char const* req_sql_update_name = required_name + strlen("required_");
-
-    QueryNamedResult* result2 = PQueryNamed("SELECT * FROM %s LIMIT 1", table_name);
+    QueryNamedResult* result2 = PQueryNamed("SELECT * FROM %s LIMIT 1", table_name.c_str());
     if (result2)
     {
         QueryFieldNames const& namesMap = result2->GetFieldNames();
         std::string reqName;
         for (QueryFieldNames::const_iterator itr = namesMap.begin(); itr != namesMap.end(); ++itr)
         {
-            if (itr->substr(0, 9) == "required_")
+            if (itr->substr(0, 9) == REQUIRED_SQL_SUFFIX)
             {
                 reqName = *itr;
                 break;
@@ -486,62 +485,38 @@ bool Database::CheckRequiredField(char const* table_name, char const* required_n
 
         delete result2;
 
-        std::string cur_sql_update_name = reqName.substr(strlen("required_"), reqName.npos);
+        std::string cur_sql_update_name = reqName.substr(rSuffixLen);
 
         if (!reqName.empty())
         {
-            sLog.outErrorDb("The table `%s` in your [%s] database indicates that this database is out of date!", table_name, db_name);
+            sLog.outErrorDb("The table `%s` in your [%s] database indicates that this database is out of date!", table_name.c_str(), m_dbName.c_str());
             sLog.outErrorDb();
             sLog.outErrorDb("  [A] You have: --> `%s.sql`", cur_sql_update_name.c_str());
             sLog.outErrorDb();
-            sLog.outErrorDb("  [B] You need: --> `%s.sql`", req_sql_update_name);
+            sLog.outErrorDb("  [B] You need: --> `%s.sql`", req_sql_update_name.c_str());
             sLog.outErrorDb();
-            sLog.outErrorDb("You must apply all updates after [A] to [B] to use mangos with this database.");
-#ifdef BUILD_PLAYERBOT
-            if (reqName.find("playerbot") != std::string::npos)
-            {
-                sLog.outErrorDb("These updates are included in the [sql/PlayerBot] folder.");
-                sLog.outErrorDb("Please read the [doc/README.Playerbot] file for instructions on updating.");
-            }
-            else
-            {
-                // Unmodded core code below
-                sLog.outErrorDb("These updates are included in the sql/updates folder.");
-                sLog.outErrorDb("Please read the included [README] in sql/updates for instructions on updating.");
-            }
-#else
-            sLog.outErrorDb("These updates are included in the sql/updates folder.");
-            sLog.outErrorDb("Please read the included [README] in sql/updates for instructions on updating.");
-#endif
+            sLog.outErrorDb("You must apply all updates after [A] to [B] to use CMaNGOS with this database.");
         }
         else
         {
-            sLog.outErrorDb("The table `%s` in your [%s] database is missing its version info.", table_name, db_name);
-            sLog.outErrorDb("MaNGOS cannot find the version info needed to check that the db is up to date.");
+            sLog.outErrorDb("The table `%s` in your [%s] database is missing its version info.", table_name.c_str(), m_dbName.c_str());
+            sLog.outErrorDb("CMaNGOS cannot find the version info needed to check that the db is up to date.");
             sLog.outErrorDb();
-            sLog.outErrorDb("This revision of MaNGOS requires a database updated to:");
-            sLog.outErrorDb("`%s.sql`", req_sql_update_name);
+            sLog.outErrorDb("This revision of CMaNGOS requires a database updated to:");
+            sLog.outErrorDb("`%s.sql`", req_sql_update_name.c_str());
             sLog.outErrorDb();
-
-            if (!strcmp(db_name, "WORLD"))
-                sLog.outErrorDb("Post this error to your database provider forum or find a solution there.");
-            else
-                sLog.outErrorDb("Reinstall your [%s] database with the included sql file in the sql folder.", db_name);
+            sLog.outErrorDb("Reinstall your [%s] database with the included sql file in the sql folder.", m_dbName);
         }
     }
     else
     {
-        sLog.outErrorDb("The table `%s` in your [%s] database is missing or corrupt.", table_name, db_name);
-        sLog.outErrorDb("MaNGOS cannot find the version info needed to check that the db is up to date.");
+        sLog.outErrorDb("The table `%s` in your [%s] database is missing or corrupt.", table_name.c_str(), m_dbName.c_str());
+        sLog.outErrorDb("CMaNGOS cannot find the version info needed to check that the db is up to date.");
         sLog.outErrorDb();
-        sLog.outErrorDb("This revision of mangos requires a database updated to:");
+        sLog.outErrorDb("This revision of CMaNGOS requires a database updated to:");
         sLog.outErrorDb("`%s.sql`", req_sql_update_name);
         sLog.outErrorDb();
-
-        if (!strcmp(db_name, "WORLD"))
-            sLog.outErrorDb("Post this error to your database provider forum or find a solution there.");
-        else
-            sLog.outErrorDb("Reinstall your [%s] database with the included sql file in the sql folder.", db_name);
+        sLog.outErrorDb("Reinstall your [%s] database with the included sql file in the sql folder.", m_dbName);
     }
 
     return false;

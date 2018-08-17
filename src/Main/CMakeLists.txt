@@ -25,12 +25,14 @@ if(WIN32)
   set(EXECUTABLE_SRCS ${EXECUTABLE_SRCS} AuthServer.rc)
 endif()
 
-include_directories(
-  "${CMAKE_SOURCE_DIR}/dep/HeaderOnlyLibs"
-  "${CMAKE_SOURCE_DIR}/src/Framework"
-  ${CMAKE_CURRENT_SOURCE_DIR}
-  ${CMAKE_BINARY_DIR}
-)
+#include_directories(
+#  "${CMAKE_SOURCE_DIR}/dep/HeaderOnlyLibs"
+#  "${CMAKE_SOURCE_DIR}/src/Framework"
+#  ${CMAKE_CURRENT_SOURCE_DIR}
+#  ${CMAKE_BINARY_DIR}
+#  ${MYSQL_INCLUDE_DIR}
+#  ${OPENSSL_INCLUDE_DIR}
+#)
 
 add_executable(${EXECUTABLE_NAME}
   ${EXECUTABLE_SRCS}
@@ -38,7 +40,9 @@ add_executable(${EXECUTABLE_NAME}
 
 if(WIN32)
   target_link_libraries(${EXECUTABLE_NAME}
-    ${OPENSSL_LIBRARIES}
+    PRIVATE Framework
+    PRIVATE ${OPENSSL_CRYPTO_LIBRARY}
+    PRIVATE ${MYSQL_LIBRARY}
   )
   if(MINGW)
     target_link_libraries(${EXECUTABLE_NAME}
@@ -53,15 +57,31 @@ if(WIN32)
   set_target_properties(${EXECUTABLE_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "$(OutDir)")
   #set_target_properties(${EXECUTABLE_NAME} PROPERTIES PROJECT_LABEL "AuthServer")
 
-  # Add provided dependency lib to dev folder
-  #string(REGEX REPLACE "/" "\\\\" LibFolder ${MYSQL_LIBRARY})
-  #add_custom_command(TARGET ${EXECUTABLE_NAME} POST_BUILD
-  #  COMMAND copy \"${LibFolder}\\*.dll\" \"$(OutDir)\")
+  # Add mysql lib to dev folder
+  string(REGEX REPLACE "/" "\\\\" LibFolder ${MYSQL_LIBRARY_DIR})
+  add_custom_command(TARGET ${EXECUTABLE_NAME} POST_BUILD
+    COMMAND copy \"${LibFolder}\\libmysql.dll\" \"$(OutDir)\")
 
+  # Find dll libs of openssl
+  find_file(OPENSSL_CRYPTO_DLL NAME libcrypto-1_1-x64.dll HINTS ${OPENSSL_INCLUDE_DIR}/..)
+  find_file(OPENSSL_SSL_DLL NAME libssl-1_1-x64.dll HINTS ${OPENSSL_INCLUDE_DIR}/..)
+    
+  # Add openssl lib to dev folder
+  string(REGEX REPLACE "/" "\\\\" OPENSSL_CRYPTO_DLL ${OPENSSL_CRYPTO_DLL})
+  add_custom_command(TARGET ${EXECUTABLE_NAME} POST_BUILD
+    COMMAND copy \"${OPENSSL_CRYPTO_DLL}\" \"$(OutDir)\")
+    
   # Add conf file to dev folder
   add_custom_command(TARGET ${EXECUTABLE_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different \"${CMAKE_CURRENT_SOURCE_DIR}/AuthServer.conf.dist.in\" \"$<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/AuthServer.conf.dist\")
 endif()
+
+# Forcing the revision generation each build
+add_custom_command(TARGET ${EXECUTABLE_NAME} PRE_BUILD
+  COMMAND ${CMAKE_COMMAND}
+    -DGIT_REVISION_WORK_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+    -P "${CMAKE_SOURCE_DIR}/cmake/GitRevision.cmake"
+)
 
 if(UNIX)
   target_link_libraries(${EXECUTABLE_NAME}
@@ -87,7 +107,7 @@ set_target_properties(${EXECUTABLE_NAME} PROPERTIES LINK_FLAGS
 )
 
 install(TARGETS ${EXECUTABLE_NAME} DESTINATION ${BIN_DIR})
-install(FILES realmd.conf.dist.in DESTINATION ${CONF_DIR} RENAME realmd.conf.dist)
+install(FILES authserver.conf.dist.in DESTINATION ${CONF_DIR} RENAME authserver.conf.dist)
 
 if(MSVC)
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/\${BUILD_TYPE}/${EXECUTABLE_NAME}.pdb DESTINATION ${BIN_DIR} CONFIGURATIONS Debug)

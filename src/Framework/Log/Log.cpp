@@ -67,7 +67,7 @@ Log::Log() :
     raLogfile(nullptr), logfile(nullptr), gmLogfile(nullptr), charLogfile(nullptr), customLogFile(nullptr),
     dberLogfile(nullptr), eventAiErLogfile(nullptr), scriptErrLogFile(nullptr), worldLogfile(nullptr), m_colored(false), m_includeTime(false), m_gmlog_per_account(false), m_scriptLibName(nullptr)
 {
-    Initialize();
+    //Initialize(); We cannot use initialize here because it call sConfig instance wich may not yet initialized!
 }
 
 void Log::InitColors(const std::string& str)

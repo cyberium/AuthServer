@@ -34,23 +34,23 @@ foreach(source ${LIBRARY_SRCS})
     source_group("${source_path_msvc}" FILES "${source}")
 endforeach()
 
-# include external dependencies without warnings
-include_directories(${LIBRARY_NAME}
-  ${OPENSSL_INCLUDE_DIR}
-  ${MYSQL_INCLUDE_DIR}
-)
-
-include_directories(
-  "${CMAKE_SOURCE_DIR}/dep/HeaderOnlyLibs"
-  ${CMAKE_CURRENT_SOURCE_DIR}
-  ${CMAKE_BINARY_DIR}
-)
-
 add_library(${LIBRARY_NAME} STATIC
   ${LIBRARY_SRCS}
 )
 
+# include external dependencies without warnings
+target_include_directories(${LIBRARY_NAME}
+  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+  PUBLIC "${CMAKE_SOURCE_DIR}/dep/HeaderOnlyLibs"
+)
+ 
+target_include_directories(${LIBRARY_NAME} SYSTEM
+  PUBLIC ${Boost_INCLUDE_DIR}
+  PUBLIC ${OPENSSL_INCLUDE_DIR}
+  PUBLIC ${MYSQL_INCLUDE_DIR}
+)
+
 target_link_libraries(${LIBRARY_NAME}
   PUBLIC ${OPENSSL_LIBRARIES}
-  PUBLIC ${MYSQL_LIBRARIES}
+  PUBLIC ${MYSQL_LIBRARY}
 )

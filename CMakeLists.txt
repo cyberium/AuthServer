@@ -129,9 +129,6 @@ else()
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug;Release")
 endif()
 
-# find Git: used to get the revision number
-find_package(Git)
-
 if(NOT MSVC)
   # Include cotire to manage PCH support
   include(cotire)
@@ -213,8 +210,12 @@ endif()
 
 # MYSQL
 find_package(MySQL)
+if(NOT MYSQL_FOUND)
+  message(FATAL_ERROR "This project requires MySQL lib.  Please install from https://dev.mysql.com/downloads/mysql/")
+endif()
 
 if(APPLE)
+  set(OPENSSL_USE_STATIC_LIBS 1)
   find_package(OpenSSL)
   if(NOT OpenSSL_FOUND AND NOT OPENSSL_FOUND)
     # If OpenSSL path isn't specified on mac we set the one that homebrew uses and try again
@@ -252,22 +253,8 @@ endif()
 #  endif()
 #endif()
 
-# Find core revision
-if(GIT_EXECUTABLE)
-  execute_process(
-    COMMAND ${GIT_EXECUTABLE} rev-parse HEAD
-    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-    OUTPUT_VARIABLE GIT_REVISION
-    RESULT_VARIABLE GIT_RESULT
-    ERROR_QUIET
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
-  if(GIT_RESULT)
-    set(GIT_REVISION "Git repository not found")
-  endif()
-else()
-  set(GIT_REVISION "Git not found")
-endif()
+set(GIT_REVISION_WORK_DIR "${CMAKE_SOURCE_DIR}/src/Main") 
+include(cmake/GitRevision.cmake)
 
 set(DEFINITIONS_RELEASE NDEBUG)
 set(DEFINITIONS_DEBUG _DEBUG MANGOS_DEBUG)

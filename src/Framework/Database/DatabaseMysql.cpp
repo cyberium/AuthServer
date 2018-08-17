@@ -145,8 +145,6 @@ bool MySQLConnection::Initialize(const char* infoString)
     }
 
     DETAIL_LOG("Connected to MySQL database %s@%s:%s/%s", user.c_str(), host.c_str(), port_or_socket.c_str(), database.c_str());
-    sLog.outString("MySQL client library: %s", mysql_get_client_info());
-    sLog.outString("MySQL server ver: %s ", mysql_get_server_info(mMysql));
 
     /*----------SET AUTOCOMMIT ON---------*/
     // It seems mysql 5.0.x have enabled this feature

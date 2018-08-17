@@ -9,7 +9,7 @@ ConfVersion=2018040101
 # AUTHSERVER SETTINGS
 #
 #    LoginDatabaseInfo
-#        Database connection settings for the realm server.
+#        Database connection settings for the auth server.
 #        Default: hostname;port;username;password;database
 #                 .;somenumber;username;password;database - use named pipes at Windows
 #                       Named pipes: mySQL required adding "enable-named-pipe" to [mysqld] section my.ini
@@ -107,7 +107,7 @@ ConfVersion=2018040101
 #
 ###################################################################################################################
 
-LoginDatabaseInfo = "127.0.0.1;3306;mangos;mangos;realmd"
+LoginDatabaseInfo = "127.0.0.1;3306;mangos;mangos;cmangos_authserver"
 LogsDir = ""
 MaxPingTime = 30
 RealmServerPort = 3724

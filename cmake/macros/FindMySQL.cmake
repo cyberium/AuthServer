@@ -10,6 +10,7 @@
 
 # also defined, but not for general use are
 # MYSQL_LIBRARY, where to find the MySQL library.
+# MYSQL_LIBRARY_DIR, Folder where libs are
 
 set( MYSQL_FOUND 0 )
 
@@ -276,9 +277,9 @@ endif( WIN32 )
 if( MYSQL_LIBRARY )
   if( MYSQL_INCLUDE_DIR )
     set( MYSQL_FOUND 1 )
-    set( MYSQL_LIBRARIES "mysql" )
     message(STATUS "Found MySQL library: ${MYSQL_LIBRARY}")
     message(STATUS "Found MySQL headers: ${MYSQL_INCLUDE_DIR}")
+    get_filename_component(MYSQL_LIBRARY_DIR ${MYSQL_LIBRARY} DIRECTORY)
   else( MYSQL_INCLUDE_DIR )
     message(FATAL_ERROR "Could not find MySQL headers! Please install the development libraries and headers")
   endif( MYSQL_INCLUDE_DIR )

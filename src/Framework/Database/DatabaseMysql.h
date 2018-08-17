@@ -77,6 +77,9 @@ class MySQLConnection : public SqlConnection
         bool CommitTransaction() override;
         bool RollbackTransaction() override;
 
+        // get some info
+        char const* GetServerInfo() const override { if (mMysql) return mysql_get_server_info(mMysql); return nullptr; };
+
     protected:
         SqlPreparedStatement* CreateStatement(const std::string& fmt) override;
 
