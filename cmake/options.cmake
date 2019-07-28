@@ -10,7 +10,7 @@ option(CMOPT_PCH           "Use precompiled headers"               ON)
 
 message("")
 message(STATUS
-  "This script builds the MaNGOS server.
+  "This script builds the Auth server that can be used with CMaNGOS servers.
   Options that can be used in order to configure the process:
     CMAKE_INSTALL_PREFIX    Path where the server should be installed to
     CMOPT_PCH               Use precompiled headers
@@ -20,7 +20,7 @@ message(STATUS
   To set an option simply type -D<OPTION>=<VALUE> after 'cmake <srcs>'.
   Also, you can specify the generator with -G. see 'cmake --help' for more details
   For example:
-    Build realm deamon server
+    Build auth server
     cmake -DCMAKE_INSTALL_PREFIX=../opt/cmangos .."
 )
 message("")

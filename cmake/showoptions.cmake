@@ -1,5 +1,5 @@
 # output generic information about the core
-message(STATUS "CMaNGOS-Core revision : ${REVISION_ID}")
+message(STATUS "Commit revision       : ${REVISION_ID}")
 message(STATUS "Revision time stamp   : ${REVISION_DATE}")
 
 # Show infomation about the options selected during configuration

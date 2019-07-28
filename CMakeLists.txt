@@ -20,7 +20,10 @@ project(CMaNGOS_AuthServer)
 # Define here name of the binaries
 set(CMANGOS_BINARY_REALMD_NAME "AuthServer")
 
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required (VERSION 3.9.2 FATAL_ERROR)
+if(NOT ${CMAKE_VERSION} VERSION_LESS "3.12.0")
+    cmake_policy (SET CMP0074 NEW)
+endif()
 
 # Function to remove duplicate entries in provided string
 function(RemoveDuplicateSubstring stringIn stringOut)
@@ -174,15 +177,6 @@ endif()
 add_definitions(-DBOOST_ALL_NO_LIB)
 set(Boost_USE_STATIC_LIBS ON)
 #set(Boost_DEBUG ON)
-
-if(MSVC)
-  # Use at least verion 3.8.1 of FindBoost to fix some issues. Especialy in MSVC with fixed Toolset issues.
-  # This is a workaround while VisualStudio does not embed higher cmake version than 3.7.2
-  if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION} LESS 3.8.1)
-    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/macros/FindBoost)
-    message(STATUS "FindBoost: included version 3.8.1 of FindBoost is used.")
-  endif()
-endif()
 
 # Find needed packages and if necessery abort if something important is missing
 find_package(Boost REQUIRED COMPONENTS system program_options thread regex)
