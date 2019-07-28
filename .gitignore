@@ -34,6 +34,7 @@ win
 # Build generated files
 #
 autom4te.cache
+src/Main/revision.h
 
 #
 # Editors / debuggers / other output files
@@ -86,6 +87,3 @@ cmake_install.cmake
 #
 # Special exceptions
 #
-
-# recastnavigation directory needs exception
-!dep/recastnavigation/RecastDemo/Build/

@@ -1,7 +1,0 @@
-#ifndef __REVISION_H__
-#define __REVISION_H__
- #define REVISION_ID "3e63c9f95e3a3810a5cc4fe3ac7c6a26aec3872e"
- #define REVISION_DATE "2018-08-17T19:12:42+02:00"
- #define BUILD_DATE "2019-07-28T10:14:33 UTC"
- #define AUTH_VERSION "0.18"
-#endif // __REVISION_H__
