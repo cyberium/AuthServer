@@ -29,6 +29,6 @@ add_library(${LIBRARY_NAME} STATIC
 #  PUBLIC ${Boost_INCLUDE_DIR}
 #)
 #
-#target_link_libraries(${LIBRARY_NAME}
-#  PUBLIC Boost
-#)
+target_link_libraries(${LIBRARY_NAME}
+  PRIVATE Framework
+)
