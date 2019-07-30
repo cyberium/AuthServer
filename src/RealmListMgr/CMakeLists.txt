@@ -16,6 +16,19 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-add_subdirectory(Framework)
-add_subdirectory(RealmListMgr)
-add_subdirectory(Main)
+set(LIBRARY_NAME RealmListMgr)
+
+# Find all the input files
+FILE(GLOB_RECURSE LIBRARY_SRCS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.h" "*.cpp" "*.hpp")
+
+add_library(${LIBRARY_NAME} STATIC
+  ${LIBRARY_SRCS}
+)
+
+#target_include_directories(${LIBRARY_NAME} SYSTEM
+#  PUBLIC ${Boost_INCLUDE_DIR}
+#)
+#
+#target_link_libraries(${LIBRARY_NAME}
+#  PUBLIC Boost
+#)

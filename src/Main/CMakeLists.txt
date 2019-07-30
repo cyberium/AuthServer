@@ -25,25 +25,19 @@ if(WIN32)
   set(EXECUTABLE_SRCS ${EXECUTABLE_SRCS} AuthServer.rc)
 endif()
 
-#include_directories(
-#  "${CMAKE_SOURCE_DIR}/dep/HeaderOnlyLibs"
-#  "${CMAKE_SOURCE_DIR}/src/Framework"
-#  ${CMAKE_CURRENT_SOURCE_DIR}
-#  ${CMAKE_BINARY_DIR}
-#  ${MYSQL_INCLUDE_DIR}
-#  ${OPENSSL_INCLUDE_DIR}
-#)
-
 add_executable(${EXECUTABLE_NAME}
   ${EXECUTABLE_SRCS}
 )
 
+target_link_libraries(${EXECUTABLE_NAME}
+  PRIVATE Framework
+  PRIVATE RealmListMgr
+  PRIVATE ${OPENSSL_CRYPTO_LIBRARY}
+  PRIVATE ${MYSQL_LIBRARY}
+  
+)
+
 if(WIN32)
-  target_link_libraries(${EXECUTABLE_NAME}
-    PRIVATE Framework
-    PRIVATE ${OPENSSL_CRYPTO_LIBRARY}
-    PRIVATE ${MYSQL_LIBRARY}
-  )
   if(MINGW)
     target_link_libraries(${EXECUTABLE_NAME}
       wsock32
@@ -82,15 +76,6 @@ add_custom_command(TARGET ${EXECUTABLE_NAME} PRE_BUILD
     -DGIT_REVISION_WORK_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
     -P "${CMAKE_SOURCE_DIR}/cmake/GitRevision.cmake"
 )
-
-if(UNIX)
-  target_link_libraries(${EXECUTABLE_NAME}
-    ${OPENSSL_LIBRARIES}
-    ${OPENSSL_EXTRA_LIBRARIES}
-  )
-
-#  target_link_libraries(${EXECUTABLE_NAME} ${MYSQL_LIBRARY})
-endif()
 
 set(EXECUTABLE_LINK_FLAGS "")
 
