@@ -65,9 +65,9 @@ void BigNumber::SetBinary(const uint8* bytes, int len)
     BN_bin2bn(t, len, _bn);
 }
 
-void BigNumber::SetHexStr(const char* str)
+int BigNumber::SetHexStr(const char* str)
 {
-    BN_hex2bn(&_bn, str);
+    return BN_hex2bn(&_bn, str);
 }
 
 void BigNumber::SetRand(int numbits)
@@ -95,9 +95,7 @@ BigNumber BigNumber::operator-=(const BigNumber& bn)
 
 BigNumber BigNumber::operator*=(const BigNumber& bn)
 {
-    BN_CTX* bnctx;
-
-    bnctx = BN_CTX_new();
+    BN_CTX* bnctx = BN_CTX_new();
     BN_mul(_bn, _bn, bn._bn, bnctx);
     BN_CTX_free(bnctx);
 
@@ -106,9 +104,7 @@ BigNumber BigNumber::operator*=(const BigNumber& bn)
 
 BigNumber BigNumber::operator/=(const BigNumber& bn)
 {
-    BN_CTX* bnctx;
-
-    bnctx = BN_CTX_new();
+    BN_CTX* bnctx = BN_CTX_new();
     BN_div(_bn, nullptr, _bn, bn._bn, bnctx);
     BN_CTX_free(bnctx);
 
@@ -117,9 +113,7 @@ BigNumber BigNumber::operator/=(const BigNumber& bn)
 
 BigNumber BigNumber::operator%=(const BigNumber& bn)
 {
-    BN_CTX* bnctx;
-
-    bnctx = BN_CTX_new();
+    BN_CTX* bnctx = BN_CTX_new();
     BN_mod(_bn, _bn, bn._bn, bnctx);
     BN_CTX_free(bnctx);
 
@@ -129,9 +123,8 @@ BigNumber BigNumber::operator%=(const BigNumber& bn)
 BigNumber BigNumber::Exp(const BigNumber& bn)
 {
     BigNumber ret;
-    BN_CTX* bnctx;
 
-    bnctx = BN_CTX_new();
+    BN_CTX* bnctx = BN_CTX_new();
     BN_exp(ret._bn, _bn, bn._bn, bnctx);
     BN_CTX_free(bnctx);
 
@@ -141,9 +134,8 @@ BigNumber BigNumber::Exp(const BigNumber& bn)
 BigNumber BigNumber::ModExp(const BigNumber& bn1, const BigNumber& bn2)
 {
     BigNumber ret;
-    BN_CTX* bnctx;
 
-    bnctx = BN_CTX_new();
+    BN_CTX* bnctx = BN_CTX_new();
     BN_mod_exp(ret._bn, _bn, bn1._bn, bn2._bn, bnctx);
     BN_CTX_free(bnctx);
 
@@ -162,10 +154,10 @@ uint32 BigNumber::AsDword() const
 
 bool BigNumber::isZero() const
 {
-    return BN_is_zero(_bn);
+    return BN_is_zero(_bn) != 0;
 }
 
-uint8* BigNumber::AsByteArray(int minSize)
+uint8* BigNumber::AsByteArray(int minSize, bool reverse)
 {
     int length = (minSize >= GetNumBytes()) ? minSize : GetNumBytes();
 
@@ -178,7 +170,8 @@ uint8* BigNumber::AsByteArray(int minSize)
 
     BN_bn2bin(_bn, (unsigned char*)_array);
 
-    std::reverse(_array, _array + length);
+    if (reverse)
+        std::reverse(_array, _array + length);
 
     return _array;
 }

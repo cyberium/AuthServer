@@ -34,7 +34,7 @@ class BigNumber
         void SetDword(uint32);
         void SetQword(uint64);
         void SetBinary(const uint8* bytes, int len);
-        void SetHexStr(const char* str);
+        int SetHexStr(const char* str);
 
         void SetRand(int numbits);
 
@@ -81,7 +81,7 @@ class BigNumber
         struct bignum_st* BN() { return _bn; }
 
         uint32 AsDword() const;
-        uint8* AsByteArray(int minSize = 0);
+        uint8* AsByteArray(int minSize = 0, bool reverse = true);
 
         const char* AsHexStr() const;
         const char* AsDecStr() const;

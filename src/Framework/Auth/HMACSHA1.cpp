@@ -21,18 +21,6 @@
 
 HMACSHA1::HMACSHA1(uint32 len, uint8* seed)
 {
-    memcpy(&m_key, seed, len);
-#if defined(OPENSSL_VERSION_NUMBER) && OPENSSL_VERSION_NUMBER >= 0x10100000L
-    m_ctx = HMAC_CTX_new();
-    HMAC_Init_ex(m_ctx, &m_key, len, EVP_sha1(), nullptr);
-#else
-    HMAC_CTX_init(&m_ctx);
-    HMAC_Init_ex(&m_ctx, &m_key, len, EVP_sha1(), nullptr);
-#endif
-}
-
-HMACSHA1::HMACSHA1(uint32 len, uint8* seed, bool) // to get over the default constructor
-{
 #if defined(OPENSSL_VERSION_NUMBER) && OPENSSL_VERSION_NUMBER >= 0x10100000L
     m_ctx = HMAC_CTX_new();
     HMAC_Init_ex(m_ctx, seed, len, EVP_sha1(), nullptr);
@@ -44,7 +32,6 @@ HMACSHA1::HMACSHA1(uint32 len, uint8* seed, bool) // to get over the default con
 
 HMACSHA1::~HMACSHA1()
 {
-    memset(&m_key, 0x00, SEED_KEY_SIZE);
 #if defined(OPENSSL_VERSION_NUMBER) && OPENSSL_VERSION_NUMBER >= 0x10100000L
     HMAC_CTX_free(m_ctx);
 #else
@@ -66,13 +53,9 @@ void HMACSHA1::UpdateData(const uint8* data, int length)
 #endif
 }
 
-void HMACSHA1::Initialize()
+void HMACSHA1::UpdateData(const std::string& str)
 {
-#if defined(OPENSSL_VERSION_NUMBER) && OPENSSL_VERSION_NUMBER >= 0x10100000L
-    HMAC_Init_ex(m_ctx, &m_key, SEED_KEY_SIZE, EVP_sha1(), NULL);
-#else
-    HMAC_Init_ex(&m_ctx, &m_key, SEED_KEY_SIZE, EVP_sha1(), NULL);
-#endif
+    UpdateData((uint8 const*)str.c_str(), str.length());
 }
 
 void HMACSHA1::Finalize()
@@ -81,7 +64,18 @@ void HMACSHA1::Finalize()
 #if defined(OPENSSL_VERSION_NUMBER) && OPENSSL_VERSION_NUMBER >= 0x10100000L
     HMAC_Final(m_ctx, (uint8*)m_digest, &length);
 #else
-    HMAC_Final(&m_ctx, m_digest, &length);
+    HMAC_Final(&m_ctx, (uint8*)m_digest, &length);
 #endif
     assert(length == SHA_DIGEST_LENGTH);
+}
+
+uint8* HMACSHA1::ComputeHash(BigNumber* bn)
+{
+#if defined(OPENSSL_VERSION_NUMBER) && OPENSSL_VERSION_NUMBER >= 0x10100000L
+    HMAC_Update(m_ctx, bn->AsByteArray(), bn->GetNumBytes());
+#else
+    HMAC_Update(&m_ctx, bn->AsByteArray(), bn->GetNumBytes());
+#endif
+    Finalize();
+    return (uint8*)m_digest;
 }
