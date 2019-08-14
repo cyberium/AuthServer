@@ -31,6 +31,7 @@
 #include <openssl/crypto.h>
 #include <mysql_version.h>
 #include "Network/Listener.hpp"
+#include "RealmListMgr.h"
 
 bool stopEvent = false;                                     ///< Setting it to true stops the server
 DatabaseType LoginDatabase;                                 ///< Accessor to the realm server database
@@ -221,6 +222,8 @@ int main(int argc, char* argv[])
     auto const numLoops = sConfig.GetIntDefault("MaxPingTime", 30) * MINUTE * 10;
     uint32 loopCounter = 0;
 
+    sRealmListMgr.StartServer();
+
 #ifndef _WIN32
     detachDaemon();
 #endif
@@ -235,6 +238,8 @@ int main(int argc, char* argv[])
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+
+    sRealmListMgr.StopServer();
 
     ///- Wait for the delay thread to exit
     LoginDatabase.HaltDelayThread();
