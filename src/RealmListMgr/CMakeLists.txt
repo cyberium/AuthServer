@@ -32,3 +32,7 @@ add_library(${LIBRARY_NAME} STATIC
 target_link_libraries(${LIBRARY_NAME}
   PRIVATE Framework
 )
+
+target_include_directories(${LIBRARY_NAME}
+  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+)
