@@ -39,6 +39,7 @@
 #include "RegSocket.h"
 #include "RealmListDef.h"
 #include "Network/Listener.hpp"
+#include <mutex>
 
 namespace RealmList2
 {
@@ -64,8 +65,8 @@ namespace RealmList2
 
     private:
         RealmMap m_realms;
-        bool m_acceptConnection;
         std::unique_ptr<MaNGOS::Listener<RegistrationSocket>> m_regListener;
+        std::mutex m_mutex;
     };
 }
 

@@ -23,7 +23,7 @@
 
 using namespace RealmList2;
 
-RealmListMgr::RealmListMgr() : m_acceptConnection(false)
+RealmListMgr::RealmListMgr() : m_regListener(nullptr)
 {
 
 }
@@ -51,6 +51,7 @@ void RealmListMgr::StopServer()
 
 bool RealmListMgr::AddRealm(RealmDataUPtr rData)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
     auto it = m_realms.find(rData->Id);
     if (it != m_realms.end())
     {
@@ -58,9 +59,8 @@ bool RealmListMgr::AddRealm(RealmDataUPtr rData)
         return false;
     }
 
+    // add the realm to realm list
     m_realms.emplace(rData->Id, std::move(rData));
-
-
 
     return true;
 }
