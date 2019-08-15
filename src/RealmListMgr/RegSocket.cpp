@@ -28,14 +28,68 @@ using namespace RealmList2;
 namespace pt = boost::property_tree;
 
 RegistrationSocket::RegistrationSocket(boost::asio::io_service& service, std::function<void(Socket*)> closeHandler) :
-    MaNGOS::Socket(service, std::move(closeHandler)), m_status(CONNECTION_STATUS_NOT_REGISTERED)
+    MaNGOS::Socket(service, std::move(closeHandler)), m_status(CONNECTION_STATUS_NOT_REGISTERED), m_realmID(0),
+    m_deadlineTimer(service), m_heartbeatTimer(service), m_heartbeatCommand(uint8(SRR_HEARTBEAT_COMMAND), 0)
 {
-
 }
 
 RegistrationSocket::~RegistrationSocket()
 {
-    DEBUG_LOG("RegistrationSocket> Connection was closed.");
+}
+
+void RegistrationSocket::StartHeartbeat()
+{
+    if (IsClosed())
+        return;
+
+    // Start an asynchronous operation to send a heartbeat message.
+    boost::asio::async_write(GetAsioSocket(), boost::asio::buffer(&m_heartbeatCommand, sizeof(m_heartbeatCommand)),
+        boost::bind(&RegistrationSocket::HandleHeartbeatWrite, shared<RegistrationSocket>(), _1));
+}
+
+void RegistrationSocket::HandleHeartbeatWrite(const boost::system::error_code& ec)
+{
+    if (IsClosed())
+        return;
+
+    if (!ec)
+    {
+        DEBUG_LOG("Heartbeat sent... ");
+
+        // Wait 10 seconds before sending the next heartbeat.
+        m_heartbeatTimer.expires_from_now(boost::posix_time::seconds(HEARTBEAT_INTERVAL));
+        m_heartbeatTimer.async_wait(boost::bind(&RegistrationSocket::StartHeartbeat, shared<RegistrationSocket>()));
+    }
+    else
+    {
+        std::cout << "Error on Heartbeat: " << ec.message() << "\n";
+
+        Close();
+    }
+}
+
+void RegistrationSocket::CheckDeadline()
+{
+    if (IsClosed())
+        return;
+
+    // Check whether the deadline has passed. We compare the deadline against
+    // the current time since a new asynchronous operation may have moved the
+    // deadline before this actor had a chance to run.
+    if (m_deadlineTimer.expires_at() <= boost::asio::deadline_timer::traits_type::now())
+    {
+        // The deadline has passed. The socket is closed so that any outstanding
+        // asynchronous operations are canceled.
+        DEBUG_LOG("RegistrationSocket::CheckDeadline> No hearbeat since %usec from server id(%u), closing connection!");
+        Close();
+
+        // There is no longer an active deadline. The expiry is set to positive
+        // infinity so that the actor takes no action until a new deadline is set.
+        m_deadlineTimer.expires_at(boost::posix_time::pos_infin);
+    }
+
+    // Put the actor back to sleep.
+    m_deadlineTimer.async_wait(boost::bind(&RegistrationSocket::CheckDeadline, shared<RegistrationSocket>()));
 }
 
 int32 RegistrationSocket::GetPayLoadLength()
@@ -56,7 +110,6 @@ bool RegistrationSocket::ProcessIncomingData()
     DEBUG_LOG("RegistrationSocket::ProcessIncomingData");
 
     bool result = true;
-    PacketHeader header;
     if (ReadLengthRemaining() > sizeof(PacketHeader))
     {
         char buffer;
@@ -66,6 +119,10 @@ bool RegistrationSocket::ProcessIncomingData()
         {
             case SRC_REGISTERING_REQUEST:
                 result = _HandleRegisteringRequest();
+                break;
+
+            case SRC_HEARTBEAT_COMMAND:
+                DEBUG_LOG("Heartbeat received... ");
                 break;
 
             case SRC_USER_CONFIRMATION_REQUEST:
@@ -85,6 +142,7 @@ bool RegistrationSocket::ProcessIncomingData()
             }
         }
     }
+    m_deadlineTimer.expires_from_now(boost::posix_time::seconds(DEADLINE_RESPONSE_TIME));
 
     return result;
 }
@@ -113,7 +171,21 @@ bool RegistrationSocket::Open()
 
     Send("hi");
 
+    StartHeartbeat();
+
+    m_deadlineTimer.expires_from_now(boost::posix_time::seconds(DEADLINE_RESPONSE_TIME));
+    CheckDeadline();
+
     return true;
+}
+
+void RegistrationSocket::Close()
+{
+    m_deadlineTimer.cancel();
+    m_heartbeatTimer.cancel();
+    Socket::Close();
+
+    DEBUG_LOG("RegistrationSocket> Connection was closed.");
 }
 
 bool RealmList2::RegistrationSocket::_HandleRegisteringRequest()
@@ -162,6 +234,8 @@ bool RealmList2::RegistrationSocket::_HandleRegisteringRequest()
 
             m_realmID = regData->Id;
 
+            regData->ServerSocket = shared<MaNGOS::Socket>();
+
             sRealmListMgr.AddRealm(std::move(regData));
         }
         catch (const pt::ptree_error& e)
@@ -175,8 +249,6 @@ bool RealmList2::RegistrationSocket::_HandleRegisteringRequest()
             return false;
         }
     }
-
-    Send("Need Implementation!");
 
     if (ReadLengthRemaining() > 0)
     {

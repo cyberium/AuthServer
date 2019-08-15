@@ -22,9 +22,15 @@
 #include "Network/Socket.hpp"
 #include "RegOpcodes.h"
 #include "RealmListDef.h"
+#include <boost/asio/deadline_timer.hpp>
 
 namespace RealmList2
 {
+
+// consider the server connection have to be closed if nothing received after deadline response time (in seconds)
+#define DEADLINE_RESPONSE_TIME 30
+#define HEARTBEAT_INTERVAL 10
+
     enum SocketStatus
     {
         CONNECTION_STATUS_NOT_REGISTERED = 0,
@@ -33,6 +39,8 @@ namespace RealmList2
 
     struct PacketHeader
     {
+        PacketHeader(uint8 cmd, uint16 size) : command(cmd), packetSize(size) {}
+
         uint8 command;
         uint16 packetSize;
     };
@@ -68,6 +76,10 @@ namespace RealmList2
         void Send(const std::string& message);
         int32 GetPayLoadLength();
 
+        void StartHeartbeat();
+        void HandleHeartbeatWrite(const boost::system::error_code& ec);
+        void CheckDeadline();
+
         bool _HandleRegisteringRequest();
         bool _HandleUserConfirmationRequest() { return false; }
         bool _HandleSecurityLevelUpdate() { return false; }
@@ -77,12 +89,16 @@ namespace RealmList2
         SocketStatus m_status;
         std::string m_input;
         uint32 m_realmID;
+        PacketHeader m_heartbeatCommand;
+
+        boost::asio::deadline_timer m_deadlineTimer;
+        boost::asio::deadline_timer m_heartbeatTimer;
 
     public:
         RegistrationSocket(boost::asio::io_service& service, std::function<void(Socket*)> closeHandler);
         virtual ~RegistrationSocket();
-
         virtual bool Open() override;
+        virtual void Close() override;
     };
 }
 

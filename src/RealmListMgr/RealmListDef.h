@@ -22,7 +22,7 @@
 
 namespace RealmList2
 {
-    class Socket;
+    class MaNGOS::Socket;
     /// Type of server
     enum RealmType
     {
@@ -91,7 +91,7 @@ namespace RealmList2
         AccountTypes AllowedSecLevel;                       // current allowed join security level (show as locked for not fit accounts)
         float PopulationLevel;
         std::set<uint32> AcceptedBuilds;                    // list of supported builds
-        std::shared_ptr<Socket> ServerSocket;
+        std::shared_ptr <MaNGOS::Socket> ServerSocket;
     };
     typedef std::unique_ptr<RealmData> RealmDataUPtr;
     typedef std::map<uint32, RealmDataUPtr> RealmMap;

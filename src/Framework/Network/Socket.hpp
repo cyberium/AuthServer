@@ -92,7 +92,7 @@ namespace MaNGOS
             virtual ~Socket() = default;
 
             virtual bool Open();
-            void Close();
+            virtual void Close();
 
             bool IsClosed() const { return !m_socket.is_open(); }
             virtual bool Deletable() const { return IsClosed(); }

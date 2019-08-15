@@ -26,6 +26,8 @@ enum ServerRegistrationCommands
     SRC_SECURITY_LEVEL_UPDATE     = 3,
     SRC_POPULATION_UPDATE         = 4,
     SRC_STATUS_UPDATE             = 5,
+
+    SRC_HEARTBEAT_COMMAND         = 255
 };
 
 enum ServerRegistrationResponse
@@ -33,6 +35,8 @@ enum ServerRegistrationResponse
     SRR_REGISTRATION_RESPONSE      = 1,
     SRR_USER_CONFIRMATION_RESPONSE = 2,
     SRR_SECURITY_LEVEL_RESPONSE    = 3,
+
+    SRR_HEARTBEAT_COMMAND          = 255
 };
 
 #endif
