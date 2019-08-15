@@ -80,7 +80,7 @@ void RegistrationSocket::CheckDeadline()
     {
         // The deadline has passed. The socket is closed so that any outstanding
         // asynchronous operations are canceled.
-        DEBUG_LOG("RegistrationSocket::CheckDeadline> No hearbeat since %usec from server id(%u), closing connection!");
+        DEBUG_LOG("RegistrationSocket::CheckDeadline> No hearbeat since %usec from server id(%u), closing connection!", uint32(DEADLINE_RESPONSE_TIME), m_realmID);
         Close();
 
         // There is no longer an active deadline. The expiry is set to positive
@@ -184,7 +184,7 @@ void RegistrationSocket::Close()
     m_deadlineTimer.cancel();
     m_heartbeatTimer.cancel();
     Socket::Close();
-
+    sRealmListMgr.RemoveRealm(m_realmID);
     DEBUG_LOG("RegistrationSocket> Connection was closed.");
 }
 
@@ -236,6 +236,7 @@ bool RealmList2::RegistrationSocket::_HandleRegisteringRequest()
 
             regData->ServerSocket = shared<MaNGOS::Socket>();
 
+            // TODO:: close the socket if result of AddRealm is false?
             sRealmListMgr.AddRealm(std::move(regData));
         }
         catch (const pt::ptree_error& e)

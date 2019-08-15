@@ -64,3 +64,9 @@ bool RealmListMgr::AddRealm(RealmDataUPtr rData)
 
     return true;
 }
+
+void RealmList2::RealmListMgr::RemoveRealm(uint32 realmId)
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_realms.erase(realmId);
+}

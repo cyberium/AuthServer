@@ -58,6 +58,7 @@ namespace RealmList2
         void StartServer();
         void StopServer();
         bool AddRealm(RealmDataUPtr rData);
+        void RemoveRealm(uint32 realmId);
 
         RealmMap::const_iterator begin() const { return m_realms.begin(); }
         RealmMap::const_iterator end() const { return m_realms.end(); }

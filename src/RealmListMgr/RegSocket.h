@@ -45,18 +45,6 @@ namespace RealmList2
         uint16 packetSize;
     };
 
-    /*struct ServerRegistrationData
-    {
-        std::string Name;
-        int Id;
-        RealmType Type;
-        uint8 Flags;                                        // realm status
-        RealmZone TimeZone;
-        AccountTypes AllowedSecLevel;                       // current allowed join security level (show as locked for not fit accounts)
-        float PopulationLevel;
-        std::set<uint32> AcceptedBuilds;                    // list of supported builds
-    };*/
-
     struct membuf : std::streambuf
     {
         membuf(char* begin, char* end) { this->setg(begin, begin, end); }
