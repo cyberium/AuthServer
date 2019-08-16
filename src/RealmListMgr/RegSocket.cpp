@@ -110,7 +110,7 @@ bool RegistrationSocket::ProcessIncomingData()
     DEBUG_LOG("RegistrationSocket::ProcessIncomingData");
 
     bool result = true;
-    if (ReadLengthRemaining() > sizeof(PacketHeader))
+    if (ReadLengthRemaining() >= sizeof(PacketHeader))
     {
         char buffer;
         Read(&buffer, 1);
@@ -123,6 +123,7 @@ bool RegistrationSocket::ProcessIncomingData()
 
             case SRC_HEARTBEAT_COMMAND:
                 DEBUG_LOG("Heartbeat received... ");
+                ReadSkip(ReadLengthRemaining());
                 break;
 
             case SRC_USER_CONFIRMATION_REQUEST:
@@ -131,19 +132,23 @@ bool RegistrationSocket::ProcessIncomingData()
             case SRC_STATUS_UPDATE:
             {
                 ReadSkip(ReadLengthRemaining());
-                Send("Not Handled yet");
+                DEBUG_LOG("Not Handled yet");
                 break;
             }
             default:
             {
                 ReadSkip(ReadLengthRemaining());
-                Send("Bad command!");
+                DEBUG_LOG("Bad command!");
                 break;
             }
         }
     }
+    else
+    {
+        DEBUG_LOG("RegistrationSocket::ProcessIncomingData> recived mal formed packet!");
+        ReadSkip(ReadLengthRemaining());
+    }
     m_deadlineTimer.expires_from_now(boost::posix_time::seconds(DEADLINE_RESPONSE_TIME));
-
     return result;
 }
 
@@ -160,6 +165,7 @@ bool RegistrationSocket::HandleInput()
 void RegistrationSocket::Send(const std::string& message)
 {
     Write(message.c_str(), message.length());
+    m_heartbeatTimer.expires_from_now(boost::posix_time::seconds(HEARTBEAT_INTERVAL));
 }
 
 bool RegistrationSocket::Open()
@@ -168,8 +174,6 @@ bool RegistrationSocket::Open()
         return false;
 
     DEBUG_LOG("RegistrationSocket> Incoming connection from %s.", m_address.c_str());
-
-    Send("hi");
 
     StartHeartbeat();
 
