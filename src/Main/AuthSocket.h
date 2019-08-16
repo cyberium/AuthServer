@@ -16,10 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-/// \addtogroup realmd
-/// @{
-/// \file
-
 #ifndef _AUTHSOCKET_H
 #define _AUTHSOCKET_H
 
@@ -48,6 +44,7 @@ class AuthSocket : public MaNGOS::Socket
         void LoadRealmlist(ByteBuffer& pkt, uint32 acctid);
         int32 generateToken(char const* b32key);
 
+        bool VerifyVersion(uint8 const* a, int32 aLength, uint8 const* versionProof, bool isReconnect);
         bool _HandleLogonChallenge();
         bool _HandleLogonProof();
         bool _HandleReconnectChallenge();
@@ -78,6 +75,7 @@ class AuthSocket : public MaNGOS::Socket
         std::string _login;
         std::string _safelogin;
         std::string _token;
+        std::string m_os;
 
         // Since GetLocaleByName() is _NOT_ bijective, we have to store the locale as a string. Otherwise we can't differ
         // between enUS and enGB, which is important for the patch system
