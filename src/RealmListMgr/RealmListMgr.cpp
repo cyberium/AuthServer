@@ -64,21 +64,23 @@ RealmData const* RealmListMgr::GetRealmData(uint32 realmId)
 bool RealmListMgr::AddRealm(RealmDataUPtr rData)
 {
     bool result = false;
-    std::lock_guard<std::mutex> lock(m_mutex);
-    auto it = m_realms.find(rData->Id);
-    if (it == m_realms.end())
-    {
-        // add the realm to realm list
-        m_realms.emplace(rData->Id, std::move(rData));
-        result = true;
-    }
-    else
-    {
-        DEBUG_LOG("RealmListMgr::AddRealm> Trying to add an already existing server ID(%u)", rData->Id);
-    }
 
     // set it online
     SetOnlineStatus(*rData, true);
+
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        auto it = m_realms.find(rData->Id);
+        if (it == m_realms.end())
+        {
+            // add the realm to realm list
+            m_realms.emplace(rData->Id, std::move(rData));
+            result = true;
+        }
+        else
+            it->second = std::move(rData);
+    }
+
     return result;
 }
 
@@ -97,7 +99,7 @@ void RealmListMgr::SetRealmOnlineStatus(uint32 realmId, bool status)
         SetOnlineStatus(*itr->second, status);
 }
 
-void RealmList2::RealmListMgr::SetOnlineStatus(RealmData& rData, bool status)
+void RealmListMgr::SetOnlineStatus(RealmData& rData, bool status)
 {
     if (status)
         rData.Flags = rData.Flags & ~REALM_FLAG_OFFLINE;

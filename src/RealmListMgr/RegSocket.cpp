@@ -152,22 +152,6 @@ bool RegistrationSocket::ProcessIncomingData()
     return result;
 }
 
-bool RegistrationSocket::HandleInput()
-{
-    DEBUG_LOG("RegistrationSocket::HandleInput> received %s", m_input.c_str());
-    Send("Ready>");
-
-    m_input.clear();
-
-    return true;
-}
-
-void RegistrationSocket::Send(const std::string& message)
-{
-    Write(message.c_str(), message.length());
-    m_heartbeatTimer.expires_from_now(boost::posix_time::seconds(HEARTBEAT_INTERVAL));
-}
-
 bool RegistrationSocket::Open()
 {
     if (!Socket::Open())
@@ -192,71 +176,69 @@ void RegistrationSocket::Close()
     DEBUG_LOG("RegistrationSocket> Connection was closed.");
 }
 
-bool RealmList2::RegistrationSocket::_HandleRegisteringRequest()
+bool RegistrationSocket::_HandleRegisteringRequest()
 {
+    bool added = false;
     if (m_status != CONNECTION_STATUS_NOT_REGISTERED)
     {
         sLog.outError("RegistrationSocket::_HandleRegisteringRequest> Server %u sent registration request while already registered!",
             m_realmID);
-        return false;
     }
-
-    int32 payLoadLength = GetPayLoadLength();
-    if (payLoadLength < 0)
+    else
     {
-        sLog.outError("RegistrationSocket::_HandleRegisteringRequest> Received mal formed packet!");
-        return false;
-    }
-
-    if (payLoadLength > 0)
-    {
-        std::unique_ptr<char> buffer = std::unique_ptr<char>(new char[payLoadLength]);
-        Read(buffer.get(), payLoadLength);
-        imemstream sBuff(buffer.get(), buffer.get() + payLoadLength);
-        pt::ptree receivedJSON;
-        try
+        int32 payLoadLength = GetPayLoadLength();
+        if (payLoadLength <= 0)
         {
-            pt::read_json(sBuff, receivedJSON);
-
-            if (sLog.HasLogLevelOrHigher(LOG_LVL_DEBUG))
+            sLog.outError("RegistrationSocket::_HandleRegisteringRequest> Received mal formed packet!");
+        }
+        else
+        {
+            std::unique_ptr<char> buffer = std::unique_ptr<char>(new char[payLoadLength]);
+            Read(buffer.get(), payLoadLength);
+            imemstream sBuff(buffer.get(), buffer.get() + payLoadLength);
+            pt::ptree receivedJSON;
+            try
             {
-                pt::write_json(std::cout, receivedJSON);
-            }
+                pt::read_json(sBuff, receivedJSON);
 
-            std::unique_ptr<RealmData> regData = std::unique_ptr<RealmData>(new RealmData());
+                if (sLog.HasLogLevelOrHigher(LOG_LVL_DEBUG))
+                {
+                    pt::write_json(std::cout, receivedJSON);
+                }
 
-            regData->Name = receivedJSON.get<std::string>("Name");
-            regData->Id = receivedJSON.get<uint32>("Id");
-            regData->Type = static_cast<RealmType>(receivedJSON.get<uint32>("Type"));
-            regData->Flags = receivedJSON.get<uint32>("Flags");
-            regData->TimeZone = static_cast<RealmZone>(receivedJSON.get<uint32>("TimeZone"));
-            regData->AllowedSecLevel = static_cast<AccountTypes>(receivedJSON.get<uint32>("AllowedSecLevel"));
-            regData->PopulationLevel = receivedJSON.get<float>("PopulationLevel");
+                std::unique_ptr<RealmData> regData = std::unique_ptr<RealmData>(new RealmData());
 
-            for (const auto& buildItr : receivedJSON.get_child("AcceptedBuilds"))
-                regData->AcceptedBuilds.insert(buildItr.second.get_value<uint32>());
+                regData->Name = receivedJSON.get<std::string>("Name");
+                regData->Id = receivedJSON.get<uint32>("Id");
+                regData->Type = static_cast<RealmType>(receivedJSON.get<uint32>("Type"));
+                regData->Flags = receivedJSON.get<uint32>("Flags");
+                regData->TimeZone = static_cast<RealmZone>(receivedJSON.get<uint32>("TimeZone"));
+                regData->AllowedSecLevel = static_cast<AccountTypes>(receivedJSON.get<uint32>("AllowedSecLevel"));
+                regData->PopulationLevel = receivedJSON.get<float>("PopulationLevel");
 
-            m_realmID = regData->Id;
+                for (const auto& buildItr : receivedJSON.get_child("AcceptedBuilds"))
+                    regData->AcceptedBuilds.insert(buildItr.second.get_value<uint32>());
 
-            regData->ServerSocket = shared<MaNGOS::Socket>();
+                m_realmID = regData->Id;
 
-            RealmData const* realm = sRealmListMgr.GetRealmData(regData->Id);
-            if (!realm)
-            {
+                regData->ServerSocket = shared<MaNGOS::Socket>();
+
                 sRealmListMgr.AddRealm(std::move(regData));
+
+                added = true;
+            }
+            catch (const pt::ptree_error& e)
+            {
+                sLog.outError("RegistrationSocket::_HandleRegisteringRequest> %s", e.what());
+            }
+            catch (...)
+            {
+                sLog.outError("RegistrationSocket::_HandleRegisteringRequest> Unable to parse JSON!");
             }
         }
-        catch (const pt::ptree_error& e)
-        {
-            sLog.outError("RegistrationSocket::_HandleRegisteringRequest> %s", e.what());
-            return false;
-        }
-        catch (...)
-        {
-            sLog.outError("RegistrationSocket::_HandleRegisteringRequest> Unable to parse JSON!");
-            return false;
-        }
     }
+
+    SendRegisteringResponse(added);
 
     if (ReadLengthRemaining() > 0)
     {
@@ -265,4 +247,18 @@ bool RealmList2::RegistrationSocket::_HandleRegisteringRequest()
     }
 
     return true;
+}
+
+void RegistrationSocket::Send(PacketHeader const& header, char pData[])
+{
+    Write((char const*)&header, sizeof(header), pData, header.packetSize);
+    m_heartbeatTimer.expires_from_now(boost::posix_time::seconds(HEARTBEAT_INTERVAL));
+}
+
+// Response
+void RegistrationSocket::SendRegisteringResponse(bool added)
+{
+    uint8 response = added ? 1 : 0;
+    PacketHeader header(SRR_REGISTRATION_RESPONSE, sizeof(uint8));
+    Send(header, (char*)& response);
 }

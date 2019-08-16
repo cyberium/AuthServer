@@ -62,8 +62,7 @@ namespace RealmList2
     {
     private:
         virtual bool ProcessIncomingData() override;
-        bool HandleInput();
-        void Send(const std::string& message);
+        void Send(PacketHeader const& header, char pData[]);
         int32 GetPayLoadLength();
 
         void StartHeartbeat();
@@ -75,6 +74,8 @@ namespace RealmList2
         bool _HandleSecurityLevelUpdate() { return false; }
         bool _HandlePopulationUpdate() { return false; }
         bool _HandleStatusUpdate() { return false; }
+
+        void SendRegisteringResponse(bool added);
         
         SocketStatus m_status;
         std::string m_input;
