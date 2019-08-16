@@ -19,7 +19,7 @@
 #ifndef _REGISTRATION_OPCODES_H
 #define _REGISTRATION_OPCODES_H
 
-enum ServerRegistrationCommands
+enum ServerRegistrationCommands : uint8
 {
     SRC_REGISTERING_REQUEST       = 1,
     SRC_USER_CONFIRMATION_REQUEST = 2,
@@ -30,7 +30,7 @@ enum ServerRegistrationCommands
     SRC_HEARTBEAT_COMMAND         = 255
 };
 
-enum ServerRegistrationResponse
+enum ServerRegistrationResponse : uint8
 {
     SRR_REGISTRATION_RESPONSE      = 1,
     SRR_USER_CONFIRMATION_RESPONSE = 2,
