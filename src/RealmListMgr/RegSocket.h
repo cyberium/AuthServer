@@ -37,6 +37,7 @@ namespace RealmList2
         CONNECTION_STATUS_REGISTERED = 1
     };
 
+#pragma pack(push,1)
     struct PacketHeader
     {
         PacketHeader(uint8 cmd, uint16 size) : command(cmd), packetSize(size) {}
@@ -44,6 +45,7 @@ namespace RealmList2
         uint8 command;
         uint16 packetSize;
     };
+#pragma pack(pop)
 
     struct membuf : std::streambuf
     {
