@@ -188,7 +188,7 @@ void RegistrationSocket::Close()
     m_deadlineTimer.cancel();
     m_heartbeatTimer.cancel();
     Socket::Close();
-    sRealmListMgr.RemoveRealm(m_realmID);
+    sRealmListMgr.SetRealmOnlineStatus(m_realmID, false);
     DEBUG_LOG("RegistrationSocket> Connection was closed.");
 }
 
@@ -240,8 +240,11 @@ bool RealmList2::RegistrationSocket::_HandleRegisteringRequest()
 
             regData->ServerSocket = shared<MaNGOS::Socket>();
 
-            // TODO:: close the socket if result of AddRealm is false?
-            sRealmListMgr.AddRealm(std::move(regData));
+            RealmData const* realm = sRealmListMgr.GetRealmData(regData->Id);
+            if (!realm)
+            {
+                sRealmListMgr.AddRealm(std::move(regData));
+            }
         }
         catch (const pt::ptree_error& e)
         {

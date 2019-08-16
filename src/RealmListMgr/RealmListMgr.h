@@ -57,14 +57,18 @@ namespace RealmList2
 
         void StartServer();
         void StopServer();
+        RealmData const* GetRealmData(uint32 realmId);
         bool AddRealm(RealmDataUPtr rData);
         void RemoveRealm(uint32 realmId);
+        void SetRealmOnlineStatus(uint32 realmId, bool status);
 
         RealmMap::const_iterator begin() const { return m_realms.begin(); }
         RealmMap::const_iterator end() const { return m_realms.end(); }
         uint32 size() const { return m_realms.size(); }
 
     private:
+        void SetOnlineStatus(RealmData& data, bool status);
+
         RealmMap m_realms;
         std::unique_ptr<MaNGOS::Listener<RegistrationSocket>> m_regListener;
         std::mutex m_mutex;

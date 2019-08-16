@@ -49,24 +49,58 @@ void RealmListMgr::StopServer()
     m_regListener.reset(nullptr);
 }
 
-bool RealmListMgr::AddRealm(RealmDataUPtr rData)
+RealmData const* RealmListMgr::GetRealmData(uint32 realmId)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
-    auto it = m_realms.find(rData->Id);
-    if (it != m_realms.end())
+    auto itr = m_realms.find(realmId);
+
+    if (itr != m_realms.end())
     {
-        DEBUG_LOG("RealmListMgr::AddRealm> Trying to add an already existing server ID(%u)", rData->Id);
-        return false;
+        return itr->second.get();
     }
-
-    // add the realm to realm list
-    m_realms.emplace(rData->Id, std::move(rData));
-
-    return true;
+    return nullptr;
 }
 
-void RealmList2::RealmListMgr::RemoveRealm(uint32 realmId)
+bool RealmListMgr::AddRealm(RealmDataUPtr rData)
+{
+    bool result = false;
+    std::lock_guard<std::mutex> lock(m_mutex);
+    auto it = m_realms.find(rData->Id);
+    if (it == m_realms.end())
+    {
+        // add the realm to realm list
+        m_realms.emplace(rData->Id, std::move(rData));
+        result = true;
+    }
+    else
+    {
+        DEBUG_LOG("RealmListMgr::AddRealm> Trying to add an already existing server ID(%u)", rData->Id);
+    }
+
+    // set it online
+    SetOnlineStatus(*rData, true);
+    return result;
+}
+
+void RealmListMgr::RemoveRealm(uint32 realmId)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_realms.erase(realmId);
+}
+
+void RealmListMgr::SetRealmOnlineStatus(uint32 realmId, bool status)
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    auto itr = m_realms.find(realmId);
+
+    if (itr != m_realms.end())
+        SetOnlineStatus(*itr->second, status);
+}
+
+void RealmList2::RealmListMgr::SetOnlineStatus(RealmData& rData, bool status)
+{
+    if (status)
+        rData.Flags = rData.Flags & ~REALM_FLAG_OFFLINE;
+    else
+        rData.Flags = rData.Flags | REALM_FLAG_OFFLINE;
 }
