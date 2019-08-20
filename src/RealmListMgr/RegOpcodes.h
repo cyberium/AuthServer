@@ -18,25 +18,31 @@
 
 #ifndef _REGISTRATION_OPCODES_H
 #define _REGISTRATION_OPCODES_H
+#include "ByteBuffer/ByteBuffer.h"
 
-enum ServerRegistrationCommands : uint8
+// this enum should be incremental values to fit the static table
+enum SrvComOpcodes : uint8
 {
-    SRC_REGISTERING_REQUEST       = 1,
-    SRC_USER_CONFIRMATION_REQUEST = 2,
-    SRC_SECURITY_LEVEL_UPDATE     = 3,
-    SRC_POPULATION_UPDATE         = 4,
-    SRC_STATUS_UPDATE             = 5,
+    MSG_NULL_ACTION                 = 0,
+    SMSG_REGISTERING_REQUEST        = 1,
+    SMSG_USER_CONFIRMATION_REQUEST  = 2,
+    SMSG_SECURITY_LEVEL_UPDATE      = 3,
+    SMSG_POPULATION_UPDATE          = 4,
+    SMSG_STATUS_UPDATE              = 5,
 
-    SRC_HEARTBEAT_COMMAND         = 255
+    RMSG_REGISTRATION_RESPONSE      = 6,
+    RMSG_USER_CONFIRMATION_RESPONSE = 7,
+    RMSG_SECURITY_LEVEL_RESPONSE    = 8,
+
+    MSG_HEARTBEAT_COMMAND           = 9,                    // warning should always be last message
 };
 
-enum ServerRegistrationResponse : uint8
-{
-    SRR_REGISTRATION_RESPONSE      = 1,
-    SRR_USER_CONFIRMATION_RESPONSE = 2,
-    SRR_SECURITY_LEVEL_RESPONSE    = 3,
+const uint8 SRV_OPCODES_MAX = ((uint8)MSG_HEARTBEAT_COMMAND) + 1;
 
-    SRR_HEARTBEAT_COMMAND          = 255
+enum SrvComSecReq
+{
+    SRV_COM_SECURITY_FREE      = 0,
+    SRV_COM_SECURITY_NEED_AUTH = 1
 };
 
 #endif
