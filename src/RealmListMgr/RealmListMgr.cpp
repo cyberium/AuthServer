@@ -38,7 +38,7 @@ void RealmListMgr::StartServer()
     if (m_regListener != nullptr)
         return;
 
-    m_regListener.reset(new MaNGOS::Listener<RegistrationSocket>("0.0.0.0", 3444, 1));
+    m_regListener.reset(new MaNGOS::Listener<SrvComSocket>("0.0.0.0", 3444, 1));
 }
 
 void RealmListMgr::StopServer()

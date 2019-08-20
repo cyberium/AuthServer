@@ -36,7 +36,7 @@
 #define _REALMLIST_MANAGER_H
 
 #include "Common.h"
-#include "RegSocket.h"
+#include "SrvComSocket.h"
 #include "RealmListDef.h"
 #include "Network/Listener.hpp"
 #include <mutex>
@@ -70,7 +70,7 @@ namespace RealmList2
         void SetOnlineStatus(RealmData& data, bool status);
 
         RealmMap m_realms;
-        std::unique_ptr<MaNGOS::Listener<RegistrationSocket>> m_regListener;
+        std::unique_ptr<MaNGOS::Listener<SrvComSocket>> m_regListener;
         std::mutex m_mutex;
     };
 }
