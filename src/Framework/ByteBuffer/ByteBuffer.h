@@ -233,6 +233,19 @@ class ByteBuffer
             return *this;
         }
 
+        ByteBuffer& operator>>(std::stringstream& value)
+        {
+            value.clear();
+            while (rpos() < size())                         // prevent crash at wrong string format in packet
+            {
+                char c = read<char>();
+                if (c == 0)
+                    break;
+                value << c;
+            }
+            return *this;
+        }
+
         template<class T>
         ByteBuffer& operator>>(Unused<T> const&)
         {
