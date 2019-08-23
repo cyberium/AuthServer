@@ -27,6 +27,19 @@
 
 bool AuthSocket::_HandleSetGuidMode()
 {
+    ReadSkip(ReadLengthRemaining());
+
+    if (_accountSecurityLevel < SEC_ADMINISTRATOR)
+    {
+        sLog.outError("Account '%s' tried to set GUI mode with insufficient credential!", _login.c_str());
+
+        ByteBuffer pkt;
+        pkt << (uint8)MSG_SET_GUI_MODE_RESPONSE;
+        pkt << (uint8)WOW_FAIL_FAIL_NOACCESS;
+        Write((const char*)pkt.contents(), pkt.size());
+
+        return false;
+    }
     m_guiId = sRealmListMgr.AddGuiSocket(shared<AuthSocket>());
     return true;
 }

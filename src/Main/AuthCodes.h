@@ -37,7 +37,9 @@ enum eAuthCmd
     CMD_XFER_RESUME                 = 0x33,
     CMD_XFER_CANCEL                 = 0x34,
 
-    CMD_SET_GUI_MODE                = 0xF1
+    MSG_SET_GUI_MODE                = 0xA0,
+    MSG_SET_GUI_MODE_RESPONSE       = 0xA1
+
 };
 
 // not used by us currently

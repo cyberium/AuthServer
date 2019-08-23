@@ -208,7 +208,7 @@ bool AuthSocket::ProcessIncomingData()
         { CMD_XFER_RESUME,              STATUS_PATCH,       &AuthSocket::_HandleXferResume          },
         { CMD_XFER_CANCEL,              STATUS_PATCH,       &AuthSocket::_HandleXferCancel          },
 
-        { CMD_SET_GUI_MODE,             STATUS_AUTHED,      &AuthSocket::_HandleSetGuidMode         },
+        { MSG_SET_GUI_MODE,             STATUS_AUTHED,      &AuthSocket::_HandleSetGuidMode         },
 //        { CMD_GET_ACCOUNTS_INFOS,       STATUS_PATCH,       &AuthSocket::_HandleXferCancel          },
     };
 
