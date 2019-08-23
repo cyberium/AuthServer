@@ -30,6 +30,7 @@
 #include "AuthSocket.h"
 #include "AuthCodes.h"
 #include "Auth/SRP6.h"
+#include "RealmListMgr.h"
 
 #include <openssl/md5.h>
 #include <ctime>
@@ -181,8 +182,15 @@ std::array<uint8, 16> VersionChallenge = { { 0xBA, 0xA3, 0x1E, 0x99, 0xA0, 0x0B,
 
 /// Constructor - set the N and g values for SRP6
 AuthSocket::AuthSocket(boost::asio::io_service& service, std::function<void (Socket*)> closeHandler)
-    : Socket(service, std::move(closeHandler)), _status(STATUS_CHALLENGE), _build(0), _accountSecurityLevel(SEC_PLAYER)
+    : Socket(service, std::move(closeHandler)), _status(STATUS_CHALLENGE), _build(0), _accountSecurityLevel(SEC_PLAYER),
+    m_guiId(0)
 {
+}
+
+void AuthSocket::Close()
+{
+    if (m_guiId != 0)
+        sRealmListMgr.RemoveGuiSocket(m_guiId);
 }
 
 /// Read the packet from the client
@@ -198,7 +206,10 @@ bool AuthSocket::ProcessIncomingData()
         { CMD_REALM_LIST,               STATUS_AUTHED,      &AuthSocket::_HandleRealmList           },
         { CMD_XFER_ACCEPT,              STATUS_PATCH,       &AuthSocket::_HandleXferAccept          },
         { CMD_XFER_RESUME,              STATUS_PATCH,       &AuthSocket::_HandleXferResume          },
-        { CMD_XFER_CANCEL,              STATUS_PATCH,       &AuthSocket::_HandleXferCancel          }
+        { CMD_XFER_CANCEL,              STATUS_PATCH,       &AuthSocket::_HandleXferCancel          },
+
+        { CMD_SET_GUI_MODE,             STATUS_AUTHED,      &AuthSocket::_HandleSetGuidMode         },
+//        { CMD_GET_ACCOUNTS_INFOS,       STATUS_PATCH,       &AuthSocket::_HandleXferCancel          },
     };
 
     const int tableLength = sizeof(table) / sizeof(AuthHandler);
@@ -786,7 +797,7 @@ bool AuthSocket::_HandleRealmList()
     LoadRealmlist(pkt, id);
 
     ByteBuffer hdr;
-    hdr << (uint8) CMD_REALM_LIST;
+    hdr << (uint8) CMD_REALM_LIST;                                                          
     hdr << (uint16)pkt.size();
     hdr.append(pkt);
 

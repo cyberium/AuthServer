@@ -40,9 +40,15 @@
 #include "RealmListDef.h"
 #include "Network/Listener.hpp"
 #include <mutex>
+#include "../Main/AuthSocket.h"
 
 namespace RealmList2
 {
+    class ::AuthSocket;
+    typedef std::shared_ptr<AuthSocket> AuthSocketSPtr;
+    typedef std::map<uint64, AuthSocketSPtr> AuthSocketSPtrMap;
+
+
     class RealmListMgr
     {
     public:
@@ -66,12 +72,19 @@ namespace RealmList2
         RealmMap::const_iterator end() const { return m_realms.end(); }
         uint32 size() const { return m_realms.size(); }
 
+        uint64 AddGuiSocket(AuthSocketSPtr skt);
+        void RemoveGuiSocket(uint64 id);
+
     private:
         void SetOnlineStatus(RealmData& data, bool status);
 
+        uint64 m_guiIdCounter;
         RealmMap m_realms;
         std::unique_ptr<MaNGOS::Listener<SrvComSocket>> m_regListener;
         std::mutex m_mutex;
+
+        std::mutex m_guiListMutex;
+        AuthSocketSPtrMap m_guiSocketMap;
     };
 }
 

@@ -23,7 +23,7 @@
 
 using namespace RealmList2;
 
-RealmListMgr::RealmListMgr() : m_regListener(nullptr)
+RealmListMgr::RealmListMgr() : m_regListener(nullptr), m_guiIdCounter(1)
 {
 
 }
@@ -105,4 +105,36 @@ void RealmListMgr::SetOnlineStatus(RealmData& rData, bool status)
         rData.Flags = rData.Flags & ~REALM_FLAG_OFFLINE;
     else
         rData.Flags = rData.Flags | REALM_FLAG_OFFLINE;
+}
+
+uint64 RealmListMgr::AddGuiSocket(AuthSocketSPtr skt)
+{
+    if (skt->GetGuiId() != 0)
+    {
+        sLog.outError("RealmListMgr::AddGuiSocket> trying to add a second time Gui socket(%s) to gui list!",
+            skt->GetRemoteAddress().c_str());
+        return 0;
+    }
+
+    // for now only one client at a time!
+    if (!m_guiSocketMap.empty())
+        return 0;
+
+    // lock critical section
+    std::lock_guard<std::mutex> lock(m_guiListMutex);
+
+    // get new id
+    uint64 newId = m_guiIdCounter++;
+
+    // add the realm to realm list
+    m_guiSocketMap.emplace(newId, std::move(skt));
+    return newId;
+}
+
+void RealmListMgr::RemoveGuiSocket(uint64 id)
+{
+    // lock critical section
+    std::lock_guard<std::mutex> lock(m_guiListMutex);
+
+    m_guiSocketMap.erase(id);
 }

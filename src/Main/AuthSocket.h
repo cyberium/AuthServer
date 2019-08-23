@@ -39,6 +39,7 @@ class AuthSocket : public MaNGOS::Socket
         const static int s_BYTE_SIZE = 32;
 
         AuthSocket(boost::asio::io_service& service, std::function<void (Socket*)> closeHandler);
+        virtual void Close() override;
 
         void SendProof(Sha1Hash sha);
         void LoadRealmlist(ByteBuffer& pkt, uint32 acctid);
@@ -50,6 +51,12 @@ class AuthSocket : public MaNGOS::Socket
         bool _HandleReconnectChallenge();
         bool _HandleReconnectProof();
         bool _HandleRealmList();
+
+        //------- Gui system ---------
+        uint32 GetGuiId() const { return m_guiId; }
+        // handlers for GUI client
+        bool _HandleSetGuidMode();
+
         // data transfer handle for patch
 
         bool _HandleXferResume();
@@ -82,6 +89,9 @@ class AuthSocket : public MaNGOS::Socket
         std::string _localizationName;
         uint16 _build;
         AccountTypes _accountSecurityLevel;
+
+        // Gui system
+        uint32 m_guiId;
 
         virtual bool ProcessIncomingData() override;
 };

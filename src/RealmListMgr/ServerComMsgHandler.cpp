@@ -101,7 +101,6 @@ bool SrvComSocket::_HandleHeartbeat(ServerComPacketUPtr pkt)
     return true;
 }
 
-
 // Responses
 void SrvComSocket::SendRegisteringResponse(bool added)
 {
