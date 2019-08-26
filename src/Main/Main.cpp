@@ -36,6 +36,8 @@
 bool stopEvent = false;                                     ///< Setting it to true stops the server
 DatabaseType LoginDatabase;                                 ///< Accessor to the realm server database
 
+volatile bool m_normallyFinalized = false;
+
 /// Handle termination signals
 /** Put the global variable stopEvent to 'true' if a termination signal is caught **/
 void OnSignal(int s)
@@ -53,6 +55,13 @@ void OnSignal(int s)
 #endif
     }
 
+    // give a 30 sec timeout in case of Master cannot finish properly
+    int32 timeOut = 200;
+    while (!m_normallyFinalized && timeOut > 0)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        --timeOut;
+    }
     signal(s, OnSignal);
 }
 
@@ -246,6 +255,7 @@ int main(int argc, char* argv[])
 
     ///- Remove signal handling before leaving
     UnhookSignals();
+    m_normallyFinalized = true;
 
     std::cout << "Press enter to exit...";
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
