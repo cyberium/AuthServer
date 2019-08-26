@@ -20,17 +20,27 @@
 #include "RegSocket.h"
 #include "Network/Listener.hpp"
 #include <memory>
+#include <thread>
+#include <chrono>
 
 using namespace RealmList2;
 
 RealmListMgr::RealmListMgr() : m_regListener(nullptr), m_guiIdCounter(1)
 {
-
 }
 
 RealmListMgr::~RealmListMgr()
 {
 
+}
+
+void RealmListMgr::UpdateThread()
+{
+    while (m_regListener != nullptr)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        sLog.outString("working!");
+    }
 }
 
 void RealmListMgr::StartServer()
@@ -39,6 +49,7 @@ void RealmListMgr::StartServer()
         return;
 
     m_regListener.reset(new MaNGOS::Listener<SrvComSocket>("0.0.0.0", 3444, 1));
+    m_realmListThread.reset(new std::thread(&RealmListMgr::UpdateThread, this));
 }
 
 void RealmListMgr::StopServer()
@@ -47,6 +58,8 @@ void RealmListMgr::StopServer()
         return;
 
     m_regListener.reset(nullptr);
+    m_realmListThread->join();
+    sLog.outString("Halted!");
 }
 
 RealmData const* RealmListMgr::GetRealmData(uint32 realmId)

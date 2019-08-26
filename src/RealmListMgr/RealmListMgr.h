@@ -41,6 +41,7 @@
 #include "Network/Listener.hpp"
 #include <mutex>
 #include "../Main/AuthSocket.h"
+#include <thread>
 
 namespace RealmList2
 {
@@ -77,6 +78,7 @@ namespace RealmList2
 
     private:
         void SetOnlineStatus(RealmData& data, bool status);
+        void UpdateThread();
 
         uint64 m_guiIdCounter;
         RealmMap m_realms;
@@ -85,6 +87,8 @@ namespace RealmList2
 
         std::mutex m_guiListMutex;
         AuthSocketSPtrMap m_guiSocketMap;
+
+        std::unique_ptr<std::thread> m_realmListThread;
     };
 }
 
