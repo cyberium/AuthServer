@@ -39,7 +39,7 @@ void RealmListMgr::UpdateThread()
     while (m_regListener != nullptr)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
-        sLog.outString("working!");
+        //TODO:: add GUI clients update
     }
 }
 
@@ -59,7 +59,6 @@ void RealmListMgr::StopServer()
 
     m_regListener.reset(nullptr);
     m_realmListThread->join();
-    sLog.outString("Halted!");
 }
 
 RealmData const* RealmListMgr::GetRealmData(uint32 realmId)
@@ -139,8 +138,10 @@ uint64 RealmListMgr::AddGuiSocket(AuthSocketSPtr skt)
     // get new id
     uint64 newId = m_guiIdCounter++;
 
+    sLog.outString("GUI(id:" UI64FMTD ") from %s and using %s credential successfully connected.", newId,  skt->GetRemoteAddress().c_str(), skt->GetAccountName().c_str());
     // add the realm to realm list
     m_guiSocketMap.emplace(newId, std::move(skt));
+
     return newId;
 }
 
@@ -149,5 +150,10 @@ void RealmListMgr::RemoveGuiSocket(uint64 id)
     // lock critical section
     std::lock_guard<std::mutex> lock(m_guiListMutex);
 
-    m_guiSocketMap.erase(id);
+    auto itr = m_guiSocketMap.find(id);
+    if (itr != m_guiSocketMap.end())
+    {
+        sLog.outString("Successfully removed GUI(id: " UI64FMTD ") from %s.", id, itr->second->GetRemoteAddress().c_str());
+        m_guiSocketMap.erase(itr);
+    }
 }

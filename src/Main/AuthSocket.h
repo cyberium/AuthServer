@@ -54,6 +54,7 @@ class AuthSocket : public MaNGOS::Socket
 
         //------- Gui system ---------
         uint32 GetGuiId() const { return m_guiId; }
+        std::string GetAccountName() const { return _login; }
         // handlers for GUI client
         bool _HandleSetGuidMode();
 
