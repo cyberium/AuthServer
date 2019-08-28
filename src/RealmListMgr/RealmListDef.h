@@ -19,9 +19,13 @@
 #define _REALMLIST_DEFINITIONS_H
 
 #include "Common.h"
+#include "TimedRingBuffer.h"
 
 namespace RealmList2
 {
+// max line of log in buffer from servers
+#define SERVER_LOG_BUFFER_SIZE 1024
+
     class MaNGOS::Socket;
     /// Type of server
     enum RealmType
@@ -78,10 +82,12 @@ namespace RealmList2
         int hotfix_version;
     };
     typedef std::set<uint32> RealmBuilds;
+    typedef std::unique_ptr<TimedRingBuffer<std::string>> TimedRingBufferUPtr;
 
     /// Storage object for a realm
     struct RealmData
     {
+        RealmData() : ServerLog(new TimedRingBuffer<std::string>(SERVER_LOG_BUFFER_SIZE)) {}
         std::string Name;
         std::string Address;
         int Id;
@@ -92,6 +98,7 @@ namespace RealmList2
         float PopulationLevel;
         std::set<uint32> AcceptedBuilds;                    // list of supported builds
         std::shared_ptr <MaNGOS::Socket> ServerSocket;
+        TimedRingBufferUPtr ServerLog;                      //buffer that will be filled by servers events and logs
     };
     typedef std::unique_ptr<RealmData> RealmDataUPtr;
     typedef std::map<uint32, RealmDataUPtr> RealmMap;

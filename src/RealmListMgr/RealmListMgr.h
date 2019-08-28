@@ -22,8 +22,8 @@
 #include "SrvComSocket.h"
 #include "RealmListDef.h"
 #include "Network/Listener.hpp"
-#include <mutex>
 #include "../Main/AuthSocket.h"
+#include <mutex>
 #include <thread>
 
 namespace RealmList2
@@ -31,7 +31,6 @@ namespace RealmList2
     class ::AuthSocket;
     typedef std::shared_ptr<AuthSocket> AuthSocketSPtr;
     typedef std::map<uint64, AuthSocketSPtr> AuthSocketSPtrMap;
-
 
     class RealmListMgr
     {
