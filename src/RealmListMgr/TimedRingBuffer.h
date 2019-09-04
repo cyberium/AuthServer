@@ -24,16 +24,15 @@
 template<typename T>
 class TimedRingBuffer
 {
-private:
+public:
+    typedef std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::microseconds> TimePoint;
+
     struct TimedItem
     {
-        TimedItem(T& elem, TimePoint& tp) : timeAdded(tp), item(elem) {}
+        TimedItem(T const& elem, TimePoint const& tp) : timeAdded(tp), item(elem) {}
         TimePoint timeAdded;
         T item;
     };
-
-public:
-    typedef std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::microseconds> TimePoint;
 
     explicit TimedRingBuffer(uint32 size) : m_bufferSize(size), m_maxReached(false), m_first(0), m_last(0)
     {

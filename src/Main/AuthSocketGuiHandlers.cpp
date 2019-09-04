@@ -40,6 +40,20 @@ bool AuthSocket::_HandleSetGuidMode()
 
         return false;
     }
+
+    ByteBuffer pkt;
+    pkt << (uint8)MSG_SET_GUI_MODE_RESPONSE;
+    pkt << (uint8)WOW_SUCCESS;
+    sRealmListMgr.GetRealmsList(pkt);
+    Write((const char*)pkt.contents(), pkt.size());
     m_guiId = sRealmListMgr.AddGuiSocket(shared<AuthSocket>());
     return true;
+}
+
+void AuthSocket::SendRealmList()
+{
+    ByteBuffer pkt;
+    pkt << (uint8)MSG_UPDATE_REALM_LIST;
+    sRealmListMgr.GetRealmsList(pkt);
+    Write((const char*)pkt.contents(), pkt.size());
 }

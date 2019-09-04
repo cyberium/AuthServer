@@ -38,7 +38,9 @@ enum eAuthCmd
     CMD_XFER_CANCEL                 = 0x34,
 
     MSG_SET_GUI_MODE                = 0xA0,
-    MSG_SET_GUI_MODE_RESPONSE       = 0xA1
+    MSG_SET_GUI_MODE_RESPONSE       = 0xA1,
+    MSG_UPDATE_REALM_LIST           = 0xA2,
+    MSG_UPDATE_REALM_INFO           = 0xA3
 
 };
 

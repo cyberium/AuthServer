@@ -157,3 +157,50 @@ void RealmListMgr::RemoveGuiSocket(uint64 id)
         m_guiSocketMap.erase(itr);
     }
 }
+
+bool RealmListMgr::GetRealmData(uint32 realmId, ByteBuffer& pkt)
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    auto const& itr = m_realms.find(realmId);
+
+    if (itr != m_realms.end())
+    {
+        RealmData const& data = *itr->second;
+        pkt << (int32)data.Id;
+        pkt << (std::string)data.Name;
+        pkt << data.Address;
+        pkt << data.Flags;
+        pkt << data.Type;
+        pkt << data.AllowedSecLevel;
+        pkt << data.PopulationLevel;
+        return true;
+    }
+    return false;
+}
+
+void RealmListMgr::GetRealmsList(ByteBuffer& pkt)
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    size_t sizePos = (uint32) pkt.wpos();
+    pkt << (uint32)1;
+    pkt << (uint8) m_realms.size();
+
+    if (m_realms.empty())
+        return;
+
+    for (auto const& realmDataItr : m_realms)
+    {
+        RealmData const& data = *realmDataItr.second;
+        pkt << (uint32)data.Id;
+        pkt << (std::string)data.Name;
+        pkt << (std::string)data.Address;
+        pkt << (uint8)data.Flags;
+        pkt << (uint8)data.Type;
+        pkt << (uint8)data.AllowedSecLevel;
+        pkt << (float)data.PopulationLevel;
+    }
+
+    uint32 totalPacketSize = static_cast<uint32>(pkt.wpos() - (sizePos + 4));
+
+    pkt.put<uint32>(sizePos, totalPacketSize);
+}

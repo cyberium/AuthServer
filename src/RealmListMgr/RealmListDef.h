@@ -90,7 +90,7 @@ namespace RealmList2
         RealmData() : ServerLog(new TimedRingBuffer<std::string>(SERVER_LOG_BUFFER_SIZE)) {}
         std::string Name;
         std::string Address;
-        int Id;
+        uint32 Id;
         RealmType Type;
         uint8 Flags;                                        // realm status
         RealmZone TimeZone;
@@ -99,6 +99,7 @@ namespace RealmList2
         std::set<uint32> AcceptedBuilds;                    // list of supported builds
         std::shared_ptr <MaNGOS::Socket> ServerSocket;
         TimedRingBufferUPtr ServerLog;                      //buffer that will be filled by servers events and logs
+        TimePoint LastUpdate;
     };
     typedef std::unique_ptr<RealmData> RealmDataUPtr;
     typedef std::map<uint32, RealmDataUPtr> RealmMap;

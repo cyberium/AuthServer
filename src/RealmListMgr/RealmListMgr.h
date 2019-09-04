@@ -57,6 +57,8 @@ namespace RealmList2
 
         uint64 AddGuiSocket(AuthSocketSPtr skt);
         void RemoveGuiSocket(uint64 id);
+        bool GetRealmData(uint32 realmId, ByteBuffer& pkt);
+        void GetRealmsList(ByteBuffer& pkt);
 
     private:
         void SetOnlineStatus(RealmData& data, bool status);

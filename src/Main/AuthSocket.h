@@ -57,9 +57,9 @@ class AuthSocket : public MaNGOS::Socket
         std::string GetAccountName() const { return _login; }
         // handlers for GUI client
         bool _HandleSetGuidMode();
+        void SendRealmList();
 
         // data transfer handle for patch
-
         bool _HandleXferResume();
         bool _HandleXferCancel();
         bool _HandleXferAccept();
