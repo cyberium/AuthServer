@@ -16,8 +16,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _REGISTRATION_SOCKET_H
-#define _REGISTRATION_SOCKET_H
+#ifndef _SERVER_COMMUNICATION_SOCKET_H
+#define _SERVER_COMMUNICATION_SOCKET_H
 
 #include "Network/Socket.hpp"
 #include "SrvComOpcodes.h"

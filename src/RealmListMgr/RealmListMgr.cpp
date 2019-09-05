@@ -17,7 +17,7 @@
  */
 
 #include "RealmListMgr.h"
-#include "RegSocket.h"
+#include "SrvComSocket.h"
 #include "Network/Listener.hpp"
 #include "Log/Log.h"
 #include <memory>
