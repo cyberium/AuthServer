@@ -102,6 +102,24 @@ bool SrvComSocket::_HandleHeartbeat(ServerComPacketUPtr pkt)
     return true;
 }
 
+bool SrvComSocket::_HandleStatusUpdate(ServerComPacketUPtr pkt)
+{
+    if (m_status != CONNECTION_STATUS_REGISTERED)
+    {
+        sLog.outError("RegistrationSocket::_HandleStatusUpdate> Server %u sent status update without being registered!",
+            m_realmID);
+    }
+    else
+    {
+        uint8 flags;
+        float populationLevel;
+        *pkt >> flags;
+        *pkt >> populationLevel;
+        sRealmListMgr.UpdateRealmStatus(m_realmID, flags, populationLevel);
+    }
+    return true;
+}
+
 // Responses
 void SrvComSocket::SendRegisteringResponse(bool added)
 {

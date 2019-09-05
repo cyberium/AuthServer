@@ -99,7 +99,7 @@ namespace RealmList2
         //bool _HandleUserConfirmationRequest(ServerComPacket& pkt);
         //bool _HandleSecurityLevelUpdate(ServerComPacket& pkt);
         //bool _HandlePopulationUpdate(ServerComPacket& pkt);
-        //bool _HandleStatusUpdate(ServerComPacket& pkt);
+        bool _HandleStatusUpdate(ServerComPacketUPtr pkt);
     };
 
     typedef struct SrvOpcodeHandler
@@ -117,7 +117,7 @@ namespace RealmList2
         {"SMSG_USER_CONFIRMATION_REQUEST"   , SRV_COM_SECURITY_FREE     , &SrvComSocket::_HandleNullMsg                },
         {"SMSG_SECURITY_LEVEL_UPDATE"       , SRV_COM_SECURITY_FREE     , &SrvComSocket::_HandleNullMsg                },
         {"SMSG_POPULATION_UPDATE"           , SRV_COM_SECURITY_FREE     , &SrvComSocket::_HandleNullMsg                },
-        {"SMSG_STATUS_UPDATE"               , SRV_COM_SECURITY_FREE     , &SrvComSocket::_HandleNullMsg                },
+        {"SMSG_STATUS_UPDATE"               , SRV_COM_SECURITY_FREE     , &SrvComSocket::_HandleStatusUpdate           },
 
         {"RMSG_REGISTRATION_RESPONSE"       , SRV_COM_SECURITY_FREE     , &SrvComSocket::_HandleNullMsg                },
         {"RMSG_USER_CONFIRMATION_RESPONSE"  , SRV_COM_SECURITY_FREE     , &SrvComSocket::_HandleNullMsg                },
