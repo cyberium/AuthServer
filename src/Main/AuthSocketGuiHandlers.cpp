@@ -52,8 +52,8 @@ bool AuthSocket::_HandleSetGuidMode()
 
 void AuthSocket::SendRealmList()
 {
-    ByteBuffer pkt;
+    /*ByteBuffer pkt;
     pkt << (uint8)MSG_UPDATE_REALM_LIST;
     sRealmListMgr.GetRealmsList(pkt);
-    Write((const char*)pkt.contents(), pkt.size());
+    Write((const char*)pkt.contents(), pkt.size());*/
 }

@@ -21,6 +21,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include "RealmListMgr.h"
+#include "Log/Log.h"
 
 using namespace RealmList2;
 namespace pt = boost::property_tree;

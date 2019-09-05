@@ -63,11 +63,15 @@ namespace RealmList2
     private:
         void SetOnlineStatus(RealmData& data, bool status);
         void UpdateThread();
+        void RealmDataToByteBuffer(RealmData const& data, ByteBuffer& pkt) const;
+        void SendNewRealm(RealmData const& rData);
+        void SendRealmStatus(RealmData const& rData);
+        void SendPacketToAllGUI(ByteBuffer const& pkt);
 
         uint64 m_guiIdCounter;
         RealmMap m_realms;
         std::unique_ptr<MaNGOS::Listener<SrvComSocket>> m_regListener;
-        std::mutex m_mutex;
+        std::mutex m_realmListMutex;
 
         std::mutex m_guiListMutex;
         AuthSocketSPtrMap m_guiSocketMap;

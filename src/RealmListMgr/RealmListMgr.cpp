@@ -19,9 +19,11 @@
 #include "RealmListMgr.h"
 #include "RegSocket.h"
 #include "Network/Listener.hpp"
+#include "Log/Log.h"
 #include <memory>
 #include <thread>
 #include <chrono>
+#include "../Main/AuthCodes.h"
 
 using namespace RealmList2;
 
@@ -63,7 +65,7 @@ void RealmListMgr::StopServer()
 
 RealmData const* RealmListMgr::GetRealmData(uint32 realmId)
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_realmListMutex);
     auto itr = m_realms.find(realmId);
 
     if (itr != m_realms.end())
@@ -71,6 +73,33 @@ RealmData const* RealmListMgr::GetRealmData(uint32 realmId)
         return itr->second.get();
     }
     return nullptr;
+}
+
+void RealmListMgr::SendPacketToAllGUI(ByteBuffer const& pkt)
+{
+    std::lock_guard<std::mutex> lock(m_guiListMutex);
+
+    for (auto const& guiItr : m_guiSocketMap)
+        guiItr.second->Write((const char*)pkt.contents(), pkt.size());
+}
+
+void RealmListMgr::SendNewRealm(RealmData const& rData)
+{
+    // lock critical section
+    ByteBuffer newRealmPkt;
+    newRealmPkt << (uint8)MSG_GUI_ADD_REALM;
+    RealmDataToByteBuffer(rData, newRealmPkt);
+    SendPacketToAllGUI(newRealmPkt);
+}
+
+void RealmListMgr::SendRealmStatus(RealmData const& rData)
+{
+    ByteBuffer pkt;
+    pkt << (uint8)MSG_GUI_ADD_REALM;
+    pkt << (uint32)rData.Id;
+    pkt << (uint8)rData.Flags;
+
+    SendPacketToAllGUI(pkt);
 }
 
 bool RealmListMgr::AddRealm(RealmDataUPtr rData)
@@ -81,10 +110,13 @@ bool RealmListMgr::AddRealm(RealmDataUPtr rData)
     SetOnlineStatus(*rData, true);
 
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        std::lock_guard<std::mutex> lock(m_realmListMutex);
         auto it = m_realms.find(rData->Id);
         if (it == m_realms.end())
         {
+            // update all GUI clients
+            SendNewRealm(*rData);
+
             // add the realm to realm list
             m_realms.emplace(rData->Id, std::move(rData));
             result = true;
@@ -98,13 +130,13 @@ bool RealmListMgr::AddRealm(RealmDataUPtr rData)
 
 void RealmListMgr::RemoveRealm(uint32 realmId)
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_realmListMutex);
     m_realms.erase(realmId);
 }
 
 void RealmListMgr::SetRealmOnlineStatus(uint32 realmId, bool status)
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_realmListMutex);
     auto itr = m_realms.find(realmId);
 
     if (itr != m_realms.end())
@@ -128,12 +160,12 @@ uint64 RealmListMgr::AddGuiSocket(AuthSocketSPtr skt)
         return 0;
     }
 
+    // lock critical section
+    std::lock_guard<std::mutex> lock(m_guiListMutex);
+
     // for now only one client at a time!
     if (!m_guiSocketMap.empty())
         return 0;
-
-    // lock critical section
-    std::lock_guard<std::mutex> lock(m_guiListMutex);
 
     // get new id
     uint64 newId = m_guiIdCounter++;
@@ -158,21 +190,26 @@ void RealmListMgr::RemoveGuiSocket(uint64 id)
     }
 }
 
+void RealmListMgr::RealmDataToByteBuffer(RealmData const& data, ByteBuffer& pkt) const
+{
+    pkt << (uint32)data.Id;
+    pkt << (std::string)data.Name;
+    pkt << (std::string)data.Address;
+    pkt << (uint8)data.Flags;
+    pkt << (uint8)data.Type;
+    pkt << (uint8)data.AllowedSecLevel;
+    pkt << (float)data.PopulationLevel;
+}
+
 bool RealmListMgr::GetRealmData(uint32 realmId, ByteBuffer& pkt)
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_realmListMutex);
     auto const& itr = m_realms.find(realmId);
 
     if (itr != m_realms.end())
     {
         RealmData const& data = *itr->second;
-        pkt << (int32)data.Id;
-        pkt << (std::string)data.Name;
-        pkt << data.Address;
-        pkt << data.Flags;
-        pkt << data.Type;
-        pkt << data.AllowedSecLevel;
-        pkt << data.PopulationLevel;
+        RealmDataToByteBuffer(data, pkt);
         return true;
     }
     return false;
@@ -180,7 +217,7 @@ bool RealmListMgr::GetRealmData(uint32 realmId, ByteBuffer& pkt)
 
 void RealmListMgr::GetRealmsList(ByteBuffer& pkt)
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_realmListMutex);
     size_t sizePos = (uint32) pkt.wpos();
     pkt << (uint32)1;
     pkt << (uint8) m_realms.size();
@@ -191,13 +228,7 @@ void RealmListMgr::GetRealmsList(ByteBuffer& pkt)
     for (auto const& realmDataItr : m_realms)
     {
         RealmData const& data = *realmDataItr.second;
-        pkt << (uint32)data.Id;
-        pkt << (std::string)data.Name;
-        pkt << (std::string)data.Address;
-        pkt << (uint8)data.Flags;
-        pkt << (uint8)data.Type;
-        pkt << (uint8)data.AllowedSecLevel;
-        pkt << (float)data.PopulationLevel;
+        RealmDataToByteBuffer(data, pkt);
     }
 
     uint32 totalPacketSize = static_cast<uint32>(pkt.wpos() - (sizePos + 4));
