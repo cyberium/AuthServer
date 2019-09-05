@@ -50,6 +50,7 @@ namespace RealmList2
         bool AddRealm(RealmDataUPtr rData);
         void RemoveRealm(uint32 realmId);
         void SetRealmOnlineStatus(uint32 realmId, bool status);
+        void UpdateRealmStatus(uint32 realmId, uint8 flags, float populationLevel);
 
         RealmMap::const_iterator begin() const { return m_realms.begin(); }
         RealmMap::const_iterator end() const { return m_realms.end(); }

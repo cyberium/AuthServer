@@ -235,3 +235,24 @@ void RealmListMgr::GetRealmsList(ByteBuffer& pkt)
 
     pkt.put<uint32>(sizePos, totalPacketSize);
 }
+
+void RealmListMgr::UpdateRealmStatus(uint32 realmId, uint8 flags, float populationLevel)
+{
+    {
+        std::lock_guard<std::mutex> lock(m_realmListMutex);
+
+        auto itr = m_realms.find(realmId);
+        if (itr == m_realms.end())
+            return;
+
+        itr->second->Flags = flags;
+        itr->second->PopulationLevel = populationLevel;
+    }
+
+    ByteBuffer pkt;
+    pkt << (uint8)MSG_GUI_SET_REALM_STATUS;
+    pkt << (uint32)realmId;
+    pkt << (uint8)flags;
+    pkt << (float)populationLevel;
+    SendPacketToAllGUI(pkt);
+}
