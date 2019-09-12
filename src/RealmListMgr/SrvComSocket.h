@@ -85,6 +85,7 @@ namespace RealmList2
         boost::asio::deadline_timer m_deadlineTimer;
         boost::asio::deadline_timer m_heartbeatTimer;
 
+        std::mutex m_closeMutex;
     public:
         SrvComSocket(boost::asio::io_service& service, std::function<void(Socket*)> closeHandler);
         virtual ~SrvComSocket();

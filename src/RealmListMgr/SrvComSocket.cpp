@@ -197,9 +197,15 @@ void SrvComSocket::Close()
 {
     m_deadlineTimer.cancel();
     m_heartbeatTimer.cancel();
-    Socket::Close();
     sRealmListMgr.SetRealmOnlineStatus(m_realmID, false);
     DEBUG_LOG("RegistrationSocket> Connection was closed.");
+
+    {
+        std::lock_guard<std::mutex> guard(m_closeMutex);
+        if (IsClosed())
+            return;
+        Socket::Close();
+    }
 }
 
 void SrvComSocket::Send(PacketHeader const& header, char pData[])
