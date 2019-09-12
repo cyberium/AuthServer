@@ -199,6 +199,9 @@ void RealmListMgr::RealmDataToByteBuffer(RealmData const& data, ByteBuffer& pkt)
     pkt << (uint8)data.Type;
     pkt << (uint8)data.AllowedSecLevel;
     pkt << (float)data.PopulationLevel;
+    pkt << (uint8)data.AcceptedBuilds.size();
+    for (auto build : data.AcceptedBuilds)
+        pkt << (uint32)build;
 }
 
 bool RealmListMgr::GetRealmData(uint32 realmId, ByteBuffer& pkt)
