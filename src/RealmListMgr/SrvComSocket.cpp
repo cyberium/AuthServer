@@ -54,7 +54,7 @@ void SrvComSocket::HandleHeartbeatWrite(const boost::system::error_code& ec)
 
     if (!ec)
     {
-        DEBUG_LOG("Heartbeat sent... ");
+        //DEBUG_LOG("Heartbeat sent... ");
 
         // Wait 10 seconds before sending the next heartbeat.
         m_heartbeatTimer.expires_from_now(boost::posix_time::seconds(HEARTBEAT_INTERVAL));
@@ -107,7 +107,7 @@ int32 SrvComSocket::GetPayLoadLength()
 
 bool SrvComSocket::ProcessIncomingData()
 {
-    DEBUG_LOG("RegistrationSocket::ProcessIncomingData");
+    //DEBUG_LOG("RegistrationSocket::ProcessIncomingData");
 
     bool result = true;
     bool malFormedPacket = false;
@@ -133,7 +133,7 @@ bool SrvComSocket::ProcessIncomingData()
             result = (*this.*SrvComOpcodesTable[cmd].handler)(std::move(pkt));
 
             if (ReadLengthRemaining() > 0)
-                sLog.outError("Some remaining data are not processed for %s", SrvComOpcodesTable[cmd].name);
+                malFormedPacket = true;
 
             /*switch (cmd)
             {

@@ -14,26 +14,34 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-#
 
-set(LIBRARY_NAME RealmListMgr)
+set(LIBRARY_SRCS
+  adler32.c
+  compress.c
+  crc32.c
+  deflate.c
+  gzclose.c
+  gzlib.c
+  gzread.c
+  gzwrite.c
+  infback.c
+  inffast.c
+  inflate.c
+  inftrees.c
+  trees.c
+  uncompr.c
+  zutil.c
+)
 
-# Find all the input files
-FILE(GLOB_RECURSE LIBRARY_SRCS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.h" "*.cpp" "*.hpp")
-
-add_library(${LIBRARY_NAME} STATIC
+add_library(${ZLIB_LIBRARIES} STATIC
   ${LIBRARY_SRCS}
 )
 
-#target_include_directories(${LIBRARY_NAME} SYSTEM
-#  PUBLIC ${Boost_INCLUDE_DIR}
-#)
-#
-target_link_libraries(${LIBRARY_NAME}
-  PRIVATE Framework
-  PRIVATE zlib
+target_include_directories(${ZLIB_LIBRARIES}
+  INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_include_directories(${LIBRARY_NAME}
-  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
-)
+if(MSVC)
+  set_target_properties(${ZLIB_LIBRARIES} PROPERTIES PROJECT_LABEL "zlib")
+  set_target_properties(${ZLIB_LIBRARIES} PROPERTIES FOLDER "Dependencies")
+endif()

@@ -29,12 +29,13 @@ enum SrvComOpcodes : uint8
     SMSG_SECURITY_LEVEL_UPDATE      = 3,
     SMSG_POPULATION_UPDATE          = 4,
     SMSG_STATUS_UPDATE              = 5,
+    SMSG_LOG_MESSAGE                = 6,
 
-    RMSG_REGISTRATION_RESPONSE      = 6,
-    RMSG_USER_CONFIRMATION_RESPONSE = 7,
-    RMSG_SECURITY_LEVEL_RESPONSE    = 8,
+    RMSG_REGISTRATION_RESPONSE      = 7,
+    RMSG_USER_CONFIRMATION_RESPONSE = 8,
+    RMSG_SECURITY_LEVEL_RESPONSE    = 9,
 
-    MSG_HEARTBEAT_COMMAND           = 9,                    // warning should always be last message
+    MSG_HEARTBEAT_COMMAND           = 10,                    // warning should always be last message
 };
 
 const uint8 SRV_OPCODES_MAX = ((uint8)MSG_HEARTBEAT_COMMAND) + 1;

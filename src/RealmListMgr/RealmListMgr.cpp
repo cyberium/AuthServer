@@ -23,6 +23,7 @@
 #include <memory>
 #include <thread>
 #include <chrono>
+#include <zlib.h>
 #include "../Main/AuthCodes.h"
 
 using namespace RealmList2;
@@ -40,8 +41,88 @@ void RealmListMgr::UpdateThread()
 {
     while (m_regListener != nullptr)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        std::this_thread::sleep_for(std::chrono::milliseconds(400));
         //TODO:: add GUI clients update
+        {
+            auto tp = std::chrono::time_point_cast<TimePoint::duration>(TimePoint::clock::now());
+
+            {
+                std::lock_guard<std::mutex> lock(m_guiListMutex);
+                if (m_guiSocketMap.empty())
+                    continue;
+            }
+
+            std::lock_guard<std::mutex> lock(m_realmListMutex);
+            if (!m_realms.empty())
+            {
+                TimedRingBuffer::LogDatasVec logs;
+
+
+                ByteBuffer dataLogs;
+                // placeholder for count of realms that will be updated
+                dataLogs << uint32(0);
+                uint32 realmsCount = 0;
+                uint32 totalLogs = 0;
+
+                for (auto& realmDataItr : m_realms)
+                {
+                    RealmData& data = *realmDataItr.second;
+
+                    data.ServerLog->GetAllAfter(logs, data.LastUpdate);
+                    if (!logs.empty())
+                    {
+                        dataLogs << (uint32)data.Id;
+                        dataLogs << (uint32)logs.size();
+                        ++realmsCount;
+                        for (auto logStr : logs)
+                        {
+                            //sLog.outString("LogsFound from (%u)> type(%u) %s", data.Id, uint32(logStr.type), logStr.log.c_str());
+
+                            dataLogs << (uint8)logStr.type;
+                            dataLogs << (std::string)logStr.log;
+                            ++totalLogs;
+                        }
+                        logs.clear();
+                        data.LastUpdate = tp;
+                    }
+                }
+
+                if (realmsCount > 0)
+                {
+                    // set the total count of realms logs provided
+                    dataLogs.put(0, realmsCount);
+
+                    uint32 size = dataLogs.size();
+
+                    uLongf destSize = compressBound(size);
+
+                    ByteBuffer dest;
+                    dest.resize(destSize);
+
+                    if (size && compress(const_cast<uint8*>(dest.contents()), &destSize, (uint8*)dataLogs.contents(), size) != Z_OK)
+                    {
+                        DEBUG_LOG("RealmListMGR::UpdateThread> Failed to compress account data");
+                    }
+                    else
+                    {
+                        dest.resize(destSize);
+
+                        ByteBuffer msgLogPkt;
+                        msgLogPkt << (uint8)MSG_GUI_ADD_LOGS;
+                        msgLogPkt << (uint8)100; // compressed data TODO add enum
+                        uint32 sizePos = (uint32)msgLogPkt.wpos();
+                        msgLogPkt << (uint32)0; // total packet size
+                        msgLogPkt << (uint32)dataLogs.size(); //uncompressed size
+                        msgLogPkt.append(dest);
+                        msgLogPkt.put(sizePos, (uint32)msgLogPkt.size());
+
+                        SendPacketToAllGUI(msgLogPkt);
+
+                        sLog.outString("Sending Logs> Total(%u) uncomp size (%ubytes) total size (%ubytes)", totalLogs, (uint32)dataLogs.size(), (uint32) msgLogPkt.size());
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -194,11 +275,13 @@ void RealmListMgr::RealmDataToByteBuffer(RealmData const& data, ByteBuffer& pkt)
 {
     pkt << (uint32)data.Id;
     pkt << (std::string)data.Name;
-    pkt << (std::string)data.Address;
+    pkt << (std::string)data.Host;
+    pkt << (uint32)data.GamePort;
     pkt << (uint8)data.Flags;
     pkt << (uint8)data.Type;
-    pkt << (uint8)data.AllowedSecLevel;
-    pkt << (float)data.PopulationLevel;
+    pkt << (uint8)data.MinAccLevel;
+    pkt << (uint32)data.MaxPlayers;
+    pkt << (uint32)data.OnlinePlayers;
     pkt << (uint8)data.AcceptedBuilds.size();
     for (auto build : data.AcceptedBuilds)
         pkt << (uint32)build;
@@ -249,7 +332,7 @@ void RealmListMgr::UpdateRealmStatus(uint32 realmId, uint8 flags, float populati
             return;
 
         itr->second->Flags = flags;
-        itr->second->PopulationLevel = populationLevel;
+        //itr->second->PopulationLevel = populationLevel;
     }
 
     ByteBuffer pkt;
@@ -258,4 +341,16 @@ void RealmListMgr::UpdateRealmStatus(uint32 realmId, uint8 flags, float populati
     pkt << (uint8)flags;
     pkt << (float)populationLevel;
     SendPacketToAllGUI(pkt);
+}
+
+void RealmList2::RealmListMgr::AddRealmLog(uint32 realmId, uint8 logType, std::string& logStr)
+{
+    std::lock_guard<std::mutex> lock(m_realmListMutex);
+    auto const& itr = m_realms.find(realmId);
+
+    if (itr != m_realms.end())
+    {
+        RealmData const& data = *itr->second;
+        data.ServerLog->Add(logStr, logType);
+    }
 }

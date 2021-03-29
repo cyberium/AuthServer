@@ -232,11 +232,12 @@ else()
   endif()
 endif()
 
-#find_package(ZLIB REQUIRED)
-#if(ZLIB_FOUND)
-#  # add to global includes and linking lists for all sub-projects at once
-#  include_directories(${ZLIB_INCLUDE_DIRS})
-#  link_libraries(${ZLIB_LIBRARIES})
+find_package(ZLIB QUIET)
+if(NOT ZLIB_FOUND)
+  # use internal source code
+  set(ZLIB_LIBRARIES "zlib")
+  message(STATUS "Could not find ZLIB on your system. The provided sources will be used.")
+endif()
 #endif()
 #if(BUILD_EXTRACTORS)
 #  find_package(BZip2 REQUIRED)

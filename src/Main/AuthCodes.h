@@ -40,7 +40,8 @@ enum eAuthCmd
     MSG_SET_GUI_MODE                = 0xA0,
     MSG_SET_GUI_MODE_RESPONSE       = 0xA1,
     MSG_GUI_ADD_REALM               = 0xA2,
-    MSG_GUI_SET_REALM_STATUS        = 0xA3
+    MSG_GUI_SET_REALM_STATUS        = 0xA3,
+    MSG_GUI_ADD_LOGS                = 0xA4
 
 };
 

@@ -18,14 +18,10 @@
 
 #include "SrvComSocket.h"
 #include <iostream>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
 #include "RealmListMgr.h"
 #include "Log/Log.h"
 
 using namespace RealmList2;
-namespace pt = boost::property_tree;
-
 
 bool SrvComSocket::_HandleNullMsg(ServerComPacketUPtr pkt)
 {
@@ -43,31 +39,30 @@ bool SrvComSocket::_HandleRegisteringRequest(ServerComPacketUPtr pkt)
     }
     else
     {
-        std::stringstream json;
-        *pkt >> json;
-        pt::ptree receivedJSON;
-
         try
         {
-            pt::read_json(json, receivedJSON);
-
-            if (sLog.HasLogLevelOrHigher(LOG_LVL_DEBUG))
-            {
-                pt::write_json(std::cout, receivedJSON);
-            }
-
             std::unique_ptr<RealmData> regData = std::unique_ptr<RealmData>(new RealmData());
 
-            regData->Name = receivedJSON.get<std::string>("Name");
-            regData->Id = receivedJSON.get<uint32>("Id");
-            regData->Type = static_cast<RealmType>(receivedJSON.get<uint32>("Type"));
-            regData->Flags = receivedJSON.get<uint32>("Flags");
-            regData->TimeZone = static_cast<RealmZone>(receivedJSON.get<uint32>("TimeZone"));
-            regData->AllowedSecLevel = static_cast<AccountTypes>(receivedJSON.get<uint32>("AllowedSecLevel"));
-            regData->PopulationLevel = receivedJSON.get<float>("PopulationLevel");
+            *pkt >> regData->Id;
+            *pkt >> regData->Name;
+            *pkt >> regData->GamePort;
+            *pkt >> regData->MaxPlayers;
+            *pkt >> regData->OnlinePlayers;
+            *pkt >> regData->MinAccLevel;
+            *pkt >> regData->Flags;
+            *pkt >> regData->Type;
+            *pkt >> regData->Zone;
 
-            for (const auto& buildItr : receivedJSON.get_child("AcceptedBuilds"))
-                regData->AcceptedBuilds.insert(buildItr.second.get_value<uint32>());
+            uint8 buildCount;
+            *pkt >> buildCount;
+            for (uint8 i = 0; i < buildCount; ++i)
+            {
+                uint32 buildId;
+                *pkt >> buildId;
+                regData->AcceptedBuilds.insert(buildId);
+            }
+
+            regData->Host = this->GetRemoteAddress();
 
             m_realmID = regData->Id;
 
@@ -77,22 +72,16 @@ bool SrvComSocket::_HandleRegisteringRequest(ServerComPacketUPtr pkt)
 
             added = true;
         }
-        catch (const pt::ptree_error& e)
-        {
-            sLog.outError("RegistrationSocket::_HandleRegisteringRequest> %s", e.what());
-        }
         catch (...)
         {
-            sLog.outError("RegistrationSocket::_HandleRegisteringRequest> Unable to parse JSON!");
+            sLog.outError("RegistrationSocket::_HandleRegisteringRequest> Unable to add realm due to bad data provided!");
         }
     }
 
     SendRegisteringResponse(added);
 
-    if (pkt->rpos() < pkt->wpos())
-    {
-        sLog.outError("RegistrationSocket::_HandleRegisteringRequest> Packet received contain unprocessed datas!");
-    }
+    if (added)
+        m_status = CONNECTION_STATUS_REGISTERED;
 
     return true;
 }
@@ -116,6 +105,26 @@ bool SrvComSocket::_HandleStatusUpdate(ServerComPacketUPtr pkt)
         *pkt >> flags;
         *pkt >> populationLevel;
         sRealmListMgr.UpdateRealmStatus(m_realmID, flags, populationLevel);
+    }
+    return true;
+}
+
+bool SrvComSocket::_HandleLogMessage(ServerComPacketUPtr pkt)
+{
+    if (m_status != CONNECTION_STATUS_REGISTERED)
+    {
+        sLog.outError("RegistrationSocket::_HandleStatusUpdate> Server %u sent status update without being registered!",
+            m_realmID);
+    }
+    else
+    {
+        uint8 type;
+        *pkt >> type;
+
+        std::string logStr;
+        *pkt >> logStr;
+
+        sRealmListMgr.AddRealmLog(m_realmID, type, logStr);
     }
     return true;
 }

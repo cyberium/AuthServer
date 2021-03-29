@@ -82,24 +82,32 @@ namespace RealmList2
         int hotfix_version;
     };
     typedef std::set<uint32> RealmBuilds;
-    typedef std::unique_ptr<TimedRingBuffer<std::string>> TimedRingBufferUPtr;
+    typedef std::unique_ptr<TimedRingBuffer> TimedRingBufferUPtr;
 
     /// Storage object for a realm
     struct RealmData
     {
-        RealmData() : ServerLog(new TimedRingBuffer<std::string>(SERVER_LOG_BUFFER_SIZE)) {}
-        std::string Name;
-        std::string Address;
+        RealmData() : ServerLog(new TimedRingBuffer(SERVER_LOG_BUFFER_SIZE)) {}
         uint32 Id;
-        RealmType Type;
+        std::string Name;
+        std::string Host;
+        uint32 GamePort;
+        uint32 MaxPlayers;
+        uint32 OnlinePlayers;
+        uint8 Type;
+        uint8 Zone;
+        uint8 MinAccLevel;
         uint8 Flags;                                        // realm status
-        RealmZone TimeZone;
-        AccountTypes AllowedSecLevel;                       // current allowed join security level (show as locked for not fit accounts)
-        float PopulationLevel;
         std::set<uint32> AcceptedBuilds;                    // list of supported builds
+
         std::shared_ptr <MaNGOS::Socket> ServerSocket;
         TimedRingBufferUPtr ServerLog;                      //buffer that will be filled by servers events and logs
         TimePoint LastUpdate;
+
+        //RealmType Type;
+        //RealmZone TimeZone;
+        //AccountTypes AllowedSecLevel;                       // current allowed join security level (show as locked for not fit accounts)
+        //float PopulationLevel;
     };
     typedef std::unique_ptr<RealmData> RealmDataUPtr;
     typedef std::map<uint32, RealmDataUPtr> RealmMap;

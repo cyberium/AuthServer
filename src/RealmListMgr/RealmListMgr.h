@@ -60,6 +60,7 @@ namespace RealmList2
         void RemoveGuiSocket(uint64 id);
         bool GetRealmData(uint32 realmId, ByteBuffer& pkt);
         void GetRealmsList(ByteBuffer& pkt);
+        void AddRealmLog(uint32 realmId, uint8 logType, std::string& logStr);
 
     private:
         void SetOnlineStatus(RealmData& data, bool status);

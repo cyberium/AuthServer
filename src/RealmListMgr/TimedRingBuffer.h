@@ -21,29 +21,36 @@
 #include "Common.h"
 #include <mutex>
 
-template<typename T>
 class TimedRingBuffer
 {
 public:
-    typedef std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::microseconds> TimePoint;
-
     struct TimedItem
     {
-        TimedItem(T const& elem, TimePoint const& tp) : timeAdded(tp), item(elem) {}
+        TimedItem(std::string const& elem, uint8 iType, TimePoint const& tp) : timeAdded(tp), item(elem), itemType(iType) {}
         TimePoint timeAdded;
-        T item;
+        std::string item;
+        uint8 itemType;
     };
+
+    struct LogDatas
+    {
+        LogDatas(std::string const& _log, uint8 _type) : log(_log), type(_type) {}
+        std::string log;
+        uint8 type;
+    };
+
+    typedef std::vector<LogDatas> LogDatasVec;
 
     explicit TimedRingBuffer(uint32 size) : m_bufferSize(size), m_maxReached(false), m_first(0), m_last(0)
     {
         // initialize the buffer so no more need of allocation
         m_buffer.reserve(size);
         for (uint32 i = 0; i < size; ++i)
-            m_buffer.emplace_back("", TimePoint());
+            m_buffer.emplace_back("", 0, TimePoint());
     }
 
     // add an element
-    void Add(const T& item)
+    void Add(const std::string& item, uint8 itemType)
     {
         using namespace std::chrono;
 
@@ -52,6 +59,7 @@ public:
         // adding item as well as the current time
         auto& slot = m_buffer[m_first];
         slot.item = item;
+        slot.itemType = itemType;
         slot.timeAdded = time_point_cast<TimePoint::duration>(TimePoint::clock::now());
 
         m_first = (m_first + 1) % m_bufferSize;
@@ -78,7 +86,7 @@ public:
     }
 
     // get a vector containing all element since provided TimePoint
-    void GetAllAfter(std::vector<T>& result, TimePoint const& timePoint)
+    void GetAllAfter(LogDatasVec& result, TimePoint const& timePoint)
     {
         result.clear();
         std::lock_guard<std::mutex> lock(m_mutex);
@@ -95,7 +103,7 @@ public:
             uint32 index = (m_first - i) % m_bufferSize;
             auto& slot = m_buffer[index];
             if (slot.timeAdded > timePoint)
-                result.emplace_back(slot.item);
+                result.emplace_back(slot.item, slot.itemType);
             else
                 break;
         }

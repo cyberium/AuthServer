@@ -17,3 +17,5 @@
 
 # disable warnings for dependencies
 DisableWarnings()
+
+add_subdirectory(zlib)
